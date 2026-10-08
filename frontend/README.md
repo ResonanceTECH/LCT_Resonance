@@ -2,6 +2,9 @@
 
 Клиент **обратного рекрутинга**: кандидаты получают офферы, работодатели ищут в Talent Pool по Match Score и достижениям ФСП.
 
+**Полный стек (FE + BE, интеграция, расхождения MSW ↔ API):** [`../README.md`](../README.md).  
+Backend: [`../backend/README.md`](../backend/README.md) · Swagger при поднятом API: `http://localhost:8000/docs`.
+
 Спеки:
 
 
