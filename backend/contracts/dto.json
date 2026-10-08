@@ -1,0 +1,22 @@
+{
+  "PageDTO": { "items": [], "total": 0, "limit": 20, "offset": 0 },
+  "ErrorDTO": {
+    "error": {
+      "code": "CANDIDATE_NOT_AVAILABLE",
+      "message": "string",
+      "details": {},
+      "request_id": "req_..."
+    }
+  },
+  "MatchDTO": {
+    "score": 91,
+    "components": { "test": 43, "skills": 25, "fsp": 13, "conditions": 10 },
+    "matched_skills": ["python", "fastapi"],
+    "missing_skills": [],
+    "reasons": [{ "code": "CATEGORY_MATCH", "text": "..." }]
+  },
+  "notes": {
+    "missing_skills": "not listed in profile (unknown), not proven absence of skill",
+    "api_prefix": "/api/v1"
+  }
+}
