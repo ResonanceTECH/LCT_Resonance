@@ -1,0 +1,21 @@
+{
+  "FSP-2026-00123": {
+    "member_id": "FSP-2026-00123",
+    "display_name": "Alex Demo",
+    "exists": true,
+    "has_history": true
+  },
+  "FSP-2026-00999": {
+    "member_id": "FSP-2026-00999",
+    "display_name": "No History User",
+    "exists": true,
+    "has_history": false
+  },
+  "FSP-TIMEOUT": {
+    "member_id": "FSP-TIMEOUT",
+    "display_name": "Timeout Simulator",
+    "exists": true,
+    "has_history": true,
+    "force_timeout": true
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "FSP-2026-00123": [
+    {
+      "external_id": "ach-001",
+      "achievement_type": "prize",
+      "discipline": "Алгоритмическое программирование",
+      "competition_name": "Всероссийские соревнования",
+      "result": "3 place",
+      "place": 3,
+      "role": "participant",
+      "sport_rank": null,
+      "achieved_at": "2025-11-01T00:00:00Z"
+    },
+    {
+      "external_id": "ach-002",
+      "achievement_type": "finalist",
+      "discipline": "Backend",
+      "competition_name": "Hackathon Cup",
+      "result": "final",
+      "place": null,
+      "role": "participant",
+      "sport_rank": null,
+      "achieved_at": "2025-06-15T00:00:00Z"
+    },
+    {
+      "external_id": "ach-003",
+      "achievement_type": "participation",
+      "discipline": "Algorithms",
+      "competition_name": "Open Qualifiers",
+      "result": "participated",
+      "place": null,
+      "role": "participant",
+      "sport_rank": null,
+      "achieved_at": "2024-03-10T00:00:00Z"
+    }
+  ],
+  "FSP-2026-00999": []
+}
