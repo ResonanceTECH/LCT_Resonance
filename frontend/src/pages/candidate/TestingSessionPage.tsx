@@ -12,7 +12,6 @@ export function CandidateTestingSessionPage() {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<string>();
   const [index, setIndex] = useState(0);
-  const total = 3;
 
   const questionQuery = useQuery({
     queryKey: ['testing', sessionId, 'question', index],
@@ -45,6 +44,8 @@ export function CandidateTestingSessionPage() {
   }
 
   const question = questionQuery.data;
+  // The Backend decides the test length; mocks without it keep the old 3 questions.
+  const total = question.total ?? 3;
   const isLast = index >= total - 1;
 
   return (

@@ -5,6 +5,8 @@ export type AuthUser = {
   email: string;
   role: Role;
   displayName: string;
+  /** Backend: until verified, employers cannot send offers and candidates are hidden. */
+  emailVerified?: boolean;
 };
 
 export type LoginPayload = { email: string; password: string };
@@ -176,7 +178,12 @@ export type TestSession = {
 export type TestQuestion = {
   id: string;
   text: string;
+  /** Code snippet the question is about (generated questions). */
+  code?: string | null;
   options: { id: string; text: string }[];
+  /** Position in the session and its length, from the Backend. */
+  index?: number;
+  total?: number;
 };
 
 export type TestResult = TestResultSummary & {
@@ -200,6 +207,17 @@ export type ProfileCompletenessItem = {
 export type ProfileCompleteness = {
   percent: number;
   items: ProfileCompletenessItem[];
+};
+
+export type ConsentType = 'personal_data' | 'profile_publication' | 'fsp_sync';
+
+export type Consent = {
+  type: ConsentType;
+  accepted: boolean;
+  version?: string | null;
+  currentVersion: string;
+  acceptedAt?: string | null;
+  withdrawnAt?: string | null;
 };
 
 export type NotificationType =

@@ -1,215 +1,170 @@
+"""Scoring candidates against a vacancy through the configured matcher (ML or baseline).
+
+The matcher returns reason codes with parameters; labels come from REASON_LABELS here, so
+the baseline and an external ML model produce identical wording (Backend.md).
+"""
+
 from __future__ import annotations
 
+import logging
+from collections.abc import Sequence
 from uuid import UUID
 
 import httpx
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.config import get_settings
-from app.core.errors import AppError
-from app.integrations.matching.baseline import BaselineMatcher, reasons_from_codes
-from app.models.candidate import CandidateProfile, CandidateSkill
-from app.models.enums import UserStatus, VacancyStatus
+from app.integrations.matching import BaselineMatcher, get_matcher
+from app.integrations.matching.baseline import FSP_POINTS, relevant_achievements
+from app.models.candidate import CandidateProfile
 from app.models.fsp import FspAchievement
-from app.models.taxonomy import Grade, Skill, Specialization
-from app.models.user import User
 from app.models.vacancy import Vacancy, VacancySkill
+from app.schemas.candidate import CandidateMatch
+from app.schemas.common import MatchReason
 from app.schemas.matcher_contract import (
     MatcherCandidate,
-    MatcherCandidateAchievement,
-    MatcherNeed,
+    MatcherFspAchievement,
+    MatcherReason,
+    MatcherVacancy,
     MatchingRequest,
+    MatchingResponse,
 )
-from app.schemas.matching import (
-    MatchingCandidateCard,
-    MatchingItem,
-    MatchingNeed,
-    MatchingSearchRequest,
-    MatchingSearchResponse,
-    NeedSkill,
+from app.services import profiles
+from app.services.fsp import to_achievement_out
+
+logger = logging.getLogger("app.matching")
+
+VACANCY_OPTIONS = (
+    selectinload(Vacancy.skills).selectinload(VacancySkill.skill),
+    selectinload(Vacancy.specialization),
+    selectinload(Vacancy.grade),
+    selectinload(Vacancy.company),
 )
-from app.services.audit import write_audit
+MATCH_PROFILE_OPTIONS = (
+    *profiles.PROFILE_OPTIONS,
+    selectinload(CandidateProfile.fsp_achievements),
+)
+RELEVANT_FSP_LIMIT = 2
+
+WORK_FORMAT_LABELS = {"remote": "удалённо", "hybrid": "гибрид", "office": "офис"}
+# Backend.md, "Словарь причин". Codes are unique per list: the frontend uses them as keys.
+REASON_LABELS = {
+    "SPECIALIZATION_MATCH": "совпадает специализация {specialization}",
+    "SPECIALIZATION_MISMATCH": "специализация кандидата: {specialization}",
+    "GRADE_CONFIRMED": "грейд {grade} подтверждён тестом",
+    "GRADE_NOT_CONFIRMED": "грейд {grade} не подтверждён тестом",
+    "TEST_SCORE": "результат теста {score}/100",
+    "SKILLS_REQUIRED": "указаны {matched} из {total} обязательных навыков",
+    "WORK_FORMAT_MATCH": "подходит формат: {workFormat}",
+    "WORK_FORMAT_MISMATCH": "формат кандидата: {workFormat}",
+    "SALARY_MATCH": "ожидания кандидата в пределах вилки",
+    "SALARY_MISMATCH": "ожидания кандидата выше вилки",
+    "FSP_VERIFIED": "подтверждённые достижения ФСП: {count}",
+    "FSP_RELEVANT": "достижение ФСП по дисциплине {discipline}",
+}
 
 
-async def _resolve_need(
-    db: AsyncSession, payload: MatchingSearchRequest
-) -> tuple[MatchingNeed, dict[UUID, Skill]]:
-    if payload.vacancy_id:
-        vacancy = await db.get(Vacancy, payload.vacancy_id)
-        if vacancy is None:
-            raise AppError("VACANCY_NOT_FOUND", "Vacancy not found", 404)
-        result = await db.execute(
-            select(VacancySkill)
-            .where(VacancySkill.vacancy_id == vacancy.id)
-            .options(selectinload(VacancySkill.skill))
-        )
-        vskills = result.scalars().all()
-        need = MatchingNeed(
-            specialization_id=vacancy.specialization_id,
-            grade_id=vacancy.grade_id,
-            salary_from=vacancy.salary_from,
-            salary_to=vacancy.salary_to,
-            work_format=vacancy.work_format,
-            skills=[NeedSkill(skill_id=vs.skill_id, required=vs.required) for vs in vskills],
-        )
-    elif payload.need:
-        need = payload.need
-    else:
-        raise AppError("NEED_REQUIRED", "vacancy_id or need is required", 422)
-
-    skill_ids = [s.skill_id for s in need.skills]
-    skills_map: dict[UUID, Skill] = {}
-    if skill_ids:
-        rows = (
-            await db.execute(select(Skill).where(Skill.id.in_(skill_ids)))
-        ).scalars().all()
-        skills_map = {s.id: s for s in rows}
-    return need, skills_map
+def render_reason(reason: MatcherReason) -> MatchReason:
+    params = dict(reason.params)
+    if "workFormat" in params:
+        params["workFormat"] = WORK_FORMAT_LABELS.get(params["workFormat"], params["workFormat"])
+    template = REASON_LABELS.get(reason.code, reason.code)
+    try:
+        label = template.format(**params)
+    except (KeyError, IndexError, ValueError):
+        label = reason.code  # an ML model sent a code without the parameters it needs
+    return MatchReason(code=reason.code, label=label, positive=reason.positive)
 
 
-async def search_matches(
-    db: AsyncSession, *, employer_id: UUID, payload: MatchingSearchRequest
-) -> MatchingSearchResponse:
-    need, skills_map = await _resolve_need(db, payload)
-    spec = await db.get(Specialization, need.specialization_id)
-    grade = await db.get(Grade, need.grade_id)
-    if not spec or not grade:
-        raise AppError("TAXONOMY_NOT_FOUND", "Invalid specialization/grade", 404)
-
-    stmt = (
-        select(CandidateProfile)
-        .join(User, User.id == CandidateProfile.user_id)
-        .where(
-            User.status == UserStatus.active.value,
-            CandidateProfile.open_to_offers.is_(True),
-            CandidateProfile.verified_specialization_id == need.specialization_id,
-            CandidateProfile.verified_grade_id == need.grade_id,
-        )
-        .options(selectinload(CandidateProfile.skills).selectinload(CandidateSkill.skill))
-    )
-    profiles = (await db.execute(stmt)).scalars().all()
-
-    required_slugs = [
-        skills_map[s.skill_id].slug for s in need.skills if s.required and s.skill_id in skills_map
-    ]
-    optional_slugs = [
-        skills_map[s.skill_id].slug
-        for s in need.skills
-        if not s.required and s.skill_id in skills_map
-    ]
-
-    matcher_candidates: list[MatcherCandidate] = []
-    profile_map: dict[str, CandidateProfile] = {}
-    for p in profiles:
-        if need.salary_to is not None and p.salary_min is not None and p.salary_min > need.salary_to:
-            continue
-        ach_rows = (
-            await db.execute(
-                select(FspAchievement).where(FspAchievement.candidate_user_id == p.user_id)
-            )
-        ).scalars().all()
-        matcher_candidates.append(
-            MatcherCandidate(
-                id=str(p.user_id),
-                verified_specialization=spec.slug,
-                verified_grade=grade.code,
-                test_score=p.last_test_score,
-                skills=[cs.skill.slug for cs in p.skills if cs.skill],
-                fsp_achievements=[
-                    MatcherCandidateAchievement(
-                        type=a.achievement_type,
-                        discipline=a.discipline,
-                        result=a.result,
-                    )
-                    for a in ach_rows
-                ],
-                salary_min=p.salary_min,
-                work_format=p.work_format,
-            )
-        )
-        profile_map[str(p.user_id)] = p
-
-    request = MatchingRequest(
-        need=MatcherNeed(
-            specialization=spec.slug,
-            grade=grade.code,
-            required_skills=required_slugs,
-            optional_skills=optional_slugs,
-            salary_to=need.salary_to,
-            work_format=need.work_format,
-        ),
-        candidates=matcher_candidates,
+def matcher_vacancy(vacancy: Vacancy) -> MatcherVacancy:
+    return MatcherVacancy(
+        id=str(vacancy.id),
+        specialization=vacancy.specialization.name,
+        required_grade=vacancy.grade.code,
+        required_skills=[s.skill.name for s in vacancy.skills if s.required],
+        nice_to_have_skills=[s.skill.name for s in vacancy.skills if not s.required],
+        salary_from=vacancy.salary_from,
+        salary_to=vacancy.salary_to,
+        work_format=vacancy.work_format,
     )
 
-    matcher_name = "baseline"
-    response = None
-    settings = get_settings()
-    if settings.matcher_provider == "ml" and settings.ml_matcher_url:
+
+def _matcher_achievement(a: FspAchievement) -> MatcherFspAchievement:
+    return MatcherFspAchievement(
+        id=str(a.id),
+        title=a.competition_name or a.discipline or "",
+        discipline=a.discipline,
+        place_or_result=a.result,
+        sport_rank=a.sport_rank,
+        verified=a.verified,
+        achievement_type=a.achievement_type,
+    )
+
+
+def matcher_candidate(profile: CandidateProfile) -> MatcherCandidate:
+    """The category is what the test confirmed; the declared one counts only before a test."""
+    spec = profile.verified_specialization or profile.declared_specialization
+    return MatcherCandidate(
+        id=str(profile.user_id),
+        specialization=spec.name if spec else None,
+        confirmed_grade=profiles.confirmed_grade(profile),
+        test_score=profile.last_test_score,
+        skills=profiles.skill_names(profile),
+        experience_years=profile.experience_years,
+        salary_from=profile.salary_from,
+        salary_to=profile.salary_to,
+        work_format=profile.work_format,
+        fsp_achievements=[_matcher_achievement(a) for a in profile.fsp_achievements if a.verified],
+    )
+
+
+def _relevant_fsp(profile: CandidateProfile, vacancy: MatcherVacancy) -> list[FspAchievement]:
+    verified = [a for a in profile.fsp_achievements if a.verified]
+    relevant_ids = {
+        r.id for r in relevant_achievements([_matcher_achievement(a) for a in verified], vacancy)
+    }
+    # Relevant to the vacancy first, then the strongest results.
+    verified.sort(
+        key=lambda a: (str(a.id) not in relevant_ids, -FSP_POINTS.get(a.achievement_type, 0))
+    )
+    return verified[:RELEVANT_FSP_LIMIT]
+
+
+async def _rank(request: MatchingRequest) -> tuple[MatchingResponse, str]:
+    """Rank with the configured matcher; the demo must survive an ML outage."""
+    matcher = get_matcher()
+    if matcher.name != BaselineMatcher.name:
         try:
-            async with httpx.AsyncClient(timeout=2.0) as client:
-                resp = await client.post(
-                    f"{settings.ml_matcher_url.rstrip('/')}/rank",
-                    json=request.model_dump(),
-                )
-            resp.raise_for_status()
-            from app.schemas.matcher_contract import MatchingResponse as MR
+            return await matcher.rank(request), matcher.name
+        except (httpx.HTTPError, ValueError) as exc:
+            logger.warning("ml_matcher_failed_fallback_to_baseline", extra={"error": repr(exc)})
+    baseline = BaselineMatcher()
+    return await baseline.rank(request), baseline.name
 
-            response = MR.model_validate(resp.json())
-            matcher_name = "ml"
-        except Exception:
-            response = None
 
-    if response is None:
-        response = await BaselineMatcher().rank(request)
-        matcher_name = "baseline"
-
-    items: list[MatchingItem] = []
-    for m in response.matches:
-        p = profile_map.get(m.candidate_id)
-        if not p:
+async def match_profiles(
+    vacancy: Vacancy, candidates: Sequence[CandidateProfile]
+) -> dict[UUID, CandidateMatch]:
+    """Matches keyed by candidate id, in ranking order. Profiles need MATCH_PROFILE_OPTIONS."""
+    if not candidates:
+        return {}
+    mv = matcher_vacancy(vacancy)
+    by_id = {str(p.user_id): p for p in candidates}
+    response, _ = await _rank(
+        MatchingRequest(vacancy=mv, candidates=[matcher_candidate(p) for p in candidates])
+    )
+    result: dict[UUID, CandidateMatch] = {}
+    for match in response.matches:
+        profile = by_id.get(match.candidate_id)
+        if profile is None:  # an external matcher may echo unknown ids
             continue
-        first = p.first_name or ""
-        last = (p.last_name or "")[:1]
-        display = f"{first} {last}.".strip() if last else (first or "Candidate")
-        from app.schemas.common import MatchDTO
-
-        items.append(
-            MatchingItem(
-                candidate=MatchingCandidateCard(
-                    id=p.user_id,
-                    display_name=display,
-                    specialization=spec.name,
-                    grade=grade.name,
-                    skills=[cs.skill.name for cs in p.skills if cs.skill],
-                    has_fsp_history=bool(m.components.fsp > 0),
-                ),
-                match=MatchDTO(
-                    score=m.score,
-                    components=m.components,
-                    matched_skills=m.matched_skills,
-                    missing_skills=m.missing_skills,
-                    reasons=reasons_from_codes(m.reason_codes, p.last_test_score),
-                ),
-            )
+        reasons = {r.code: render_reason(r) for r in match.reasons}  # unique codes
+        result[profile.user_id] = CandidateMatch(
+            candidate_id=profile.user_id,
+            vacancy_id=vacancy.id,
+            score=round(match.score),
+            matched_skills=match.matched_skills,
+            missing_in_profile_skills=match.missing_in_profile_skills,
+            reasons=list(reasons.values()),
+            relevant_fsp=[to_achievement_out(a) for a in _relevant_fsp(profile, mv)],
         )
-
-    total = len(items)
-    sliced = items[payload.offset : payload.offset + payload.limit]
-    await write_audit(
-        db,
-        action="MATCH_REQUESTED",
-        entity_type="matching",
-        entity_id=str(employer_id),
-        actor_user_id=employer_id,
-        metadata={"total": total, "matcher": matcher_name},
-    )
-    await db.commit()
-    return MatchingSearchResponse(
-        items=sliced,
-        total=total,
-        limit=payload.limit,
-        offset=payload.offset,
-        matcher=matcher_name,
-    )
+    return result

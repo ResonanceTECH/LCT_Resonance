@@ -1,60 +1,68 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
-from app.schemas.common import ORMModel
+from app.schemas.common import (
+    ApiModel,
+    Currency,
+    OptionalText,
+    WorkFormatValue,
+    check_salary_range,
+)
+
+OfferStatusValue = Literal["new", "viewed", "accepted", "declined", "withdrawn"]
 
 
-class EmployerContact(BaseModel):
-    type: str = "email"
-    value: str
+class EmployerContact(ApiModel):
+    type: Literal["email", "phone", "telegram", "url"] = "email"
+    value: str = Field(min_length=1, max_length=320)
 
 
-class OfferCreate(BaseModel):
-    candidate_id: UUID
+class OfferCreate(ApiModel):
+    # Optional by ТЗ: an employer may approach a person without a published vacancy.
     vacancy_id: UUID | None = None
-    title: str
-    description: str
-    salary_from: int = Field(gt=0)
-    salary_to: int = Field(gt=0)
-    currency: str = "RUB"
-    work_format: str = "remote"
-    employer_contact: EmployerContact
+    candidate_id: UUID
+    company_name: OptionalText = Field(default=None, max_length=255)
+    position_title: str = Field(min_length=1, max_length=255)
+    # Salary is mandatory: the candidate must see it before any conversation (ТЗ).
+    salary_from: int
+    salary_to: int
+    currency: Currency = "RUB"
+    work_format: WorkFormatValue = "remote"
+    message: str = Field(min_length=1, max_length=5000)
+    # Falls back to the employer account email when omitted.
+    employer_contact: EmployerContact | None = None
+
+    @field_validator("vacancy_id", mode="before")
+    @classmethod
+    def _blank_vacancy(cls, value: object) -> object:
+        return None if value == "" else value
 
     @model_validator(mode="after")
-    def validate_salary(self) -> OfferCreate:
-        if self.salary_to < self.salary_from:
-            raise ValueError("salary_to must be >= salary_from")
+    def _validate(self) -> OfferCreate:
+        check_salary_range(self.salary_from, self.salary_to)
         return self
 
 
-class CompanyBrief(BaseModel):
+class OfferOut(ApiModel):
     id: UUID
-    name: str
-
-
-class OfferOut(ORMModel):
-    id: UUID
-    candidate_id: UUID
-    employer_user_id: UUID
-    company: CompanyBrief
     vacancy_id: UUID | None = None
-    title: str
-    description: str
+    candidate_id: UUID
+    employer_id: UUID
+    employer_name: str
+    employer_contact: EmployerContact
+    company_name: str
+    position_title: str
     salary_from: int
     salary_to: int
     currency: str
-    work_format: str
-    employer_contact: EmployerContact
-    status: str
+    work_format: WorkFormatValue
+    message: str
+    status: OfferStatusValue
     created_at: datetime
     viewed_at: datetime | None = None
     responded_at: datetime | None = None
-
-
-class CandidateContactOut(BaseModel):
-    candidate_id: UUID
-    contact: dict[str, str | None]

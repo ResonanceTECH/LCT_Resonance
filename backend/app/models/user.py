@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,10 +17,15 @@ if TYPE_CHECKING:
 
 class User(Base):
     __tablename__ = "users"
+    # Fetch `updated_at` via RETURNING after UPDATE; a lazy reload would fail under asyncio.
+    __mapper_args__ = {"eager_defaults": True}
+    # Emails are compared case-insensitively; the unique index lives on lower(email).
+    __table_args__ = (Index("ux_users_email", text("lower(email)"), unique=True),)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(320), nullable=False)
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    display_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     role: Mapped[str] = mapped_column(String(32), nullable=False, default=UserRole.candidate.value)
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     status: Mapped[str] = mapped_column(String(32), nullable=False, default=UserStatus.active.value)
@@ -39,6 +44,9 @@ class User(Base):
 
 class AuthSession(Base):
     __tablename__ = "auth_sessions"
+    __table_args__ = (
+        Index("uq_auth_sessions_refresh_token_hash", "refresh_token_hash", unique=True),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -57,6 +65,9 @@ class AuthSession(Base):
 
 class EmailVerificationToken(Base):
     __tablename__ = "email_verification_tokens"
+    __table_args__ = (
+        Index("uq_email_verification_tokens_token_hash", "token_hash", unique=True),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(

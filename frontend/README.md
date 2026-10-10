@@ -34,10 +34,10 @@ Frontend → Backend API → Matching/ML → Backend → Frontend
 ```bash
 cd frontend
 npm install
-npm run dev          # http://localhost:5173
+VITE_USE_MOCKS=true npm run dev   # http://localhost:5173
 ```
 
-MSW поднимается при старте (`src/main.tsx` → `mocks/browser.ts`), Service Worker: `public/mockServiceWorker.js`.  
+С `VITE_USE_MOCKS=true` MSW поднимается при старте (`src/main.tsx` → `mocks/browser.ts`), Service Worker: `public/mockServiceWorker.js`.  
 Пока моки включены, браузер **не** ходит на ваш API — отвечает SW.
 
 ### Демо-логины
@@ -54,13 +54,15 @@ MSW поднимается при старте (`src/main.tsx` → `mocks/browse
 
 Регистрация: `/register` (роли `candidate` | `employer`).
 
-### Подключение реального бэкенда
+### С реальным бэкендом (по умолчанию)
 
-1. Выключите MSW и укажите базу API в конфиге приложения — см. `src/shared/config/env.ts` (значения задаются через Vite на этапе сборки/dev; в репозиторий `.env` не коммитится).
-2. Backend должен отдавать JSON под префиксом, который совпадает с `apiBaseUrl` (по умолчанию `/api`).
-3. Для same-origin добавьте proxy в `vite.config.ts` (`server.proxy`) или nginx — сейчас proxy в конфиге **не** прописан: при другом origin нужны CORS на бэке.
+1. Поднимите backend на `:8000` (см. `../backend/README.md`) и выполните сиды — демо-логины те же.
+2. `npm run dev` без `VITE_USE_MOCKS`: Vite проксирует `/api` на `http://localhost:8000`
+   (другой адрес — `VITE_API_PROXY_TARGET=http://host:port npm run dev`).
+3. Backend реализует ровно контракт `src/entities/types.ts` + `src/shared/api/endpoints.ts`;
+   ошибки приходят как `{ message, code, details, requestId }` — UI показывает `message`.
 
-Пока MSW включён, ваш API не вызывается.
+В Docker (`docker compose up` из корня) фронт собирается без моков, nginx проксирует `/api` на backend.
 
 ---
 

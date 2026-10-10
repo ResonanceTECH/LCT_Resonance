@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Query
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from app.core.deps import DbSession
 from app.models.taxonomy import Grade, Skill, Specialization
 from app.schemas.taxonomy import GradeOut, SkillOut, SpecializationOut
+from app.services.taxonomy import like_pattern
 
 router = APIRouter(tags=["taxonomy"])
 
@@ -21,9 +22,15 @@ async def list_grades(db: DbSession) -> list[GradeOut]:
 
 
 @router.get("/skills", response_model=list[SkillOut])
-async def list_skills(db: DbSession, q: str | None = Query(default=None)) -> list[SkillOut]:
-    stmt = select(Skill).order_by(Skill.name)
-    if q:
-        stmt = stmt.where(Skill.name.ilike(f"%{q}%") | Skill.slug.ilike(f"%{q}%"))
-    rows = (await db.execute(stmt.limit(50))).scalars().all()
+async def list_skills(
+    db: DbSession, q: str | None = Query(default=None, max_length=64)
+) -> list[SkillOut]:
+    """Skill suggestions for profile and vacancy forms."""
+    stmt = select(Skill).order_by(Skill.name).limit(50)
+    if q and q.strip():
+        pattern = like_pattern(q)
+        stmt = stmt.where(
+            or_(Skill.name.ilike(pattern, escape="\\"), Skill.slug.ilike(pattern, escape="\\"))
+        )
+    rows = (await db.execute(stmt)).scalars().all()
     return [SkillOut.model_validate(r) for r in rows]

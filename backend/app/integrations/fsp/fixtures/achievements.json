@@ -34,5 +34,55 @@
       "achieved_at": "2024-03-10T00:00:00Z"
     }
   ],
-  "FSP-2026-00999": []
+  "FSP-2026-00999": [],
+  "FSP-2026-00456": [
+    {
+      "external_id": "ach-101",
+      "achievement_type": "prize",
+      "discipline": "Продуктовое программирование",
+      "competition_name": "Кубок ФСП по продуктовому программированию",
+      "result": "2 место",
+      "place": 2,
+      "role": "participant",
+      "sport_rank": "1 разряд",
+      "achieved_at": "2025-11-10T00:00:00Z"
+    },
+    {
+      "external_id": "ach-102",
+      "achievement_type": "finalist",
+      "discipline": "Продуктовое программирование",
+      "competition_name": "Хакатон ФСП",
+      "result": "Финалист",
+      "place": null,
+      "role": "participant",
+      "sport_rank": null,
+      "achieved_at": "2025-04-20T00:00:00Z"
+    }
+  ],
+  "FSP-2026-00789": [
+    {
+      "external_id": "ach-201",
+      "achievement_type": "participation",
+      "discipline": "Алгоритмическое программирование",
+      "competition_name": "Открытый отборочный этап",
+      "result": "Участник",
+      "place": null,
+      "role": "participant",
+      "sport_rank": null,
+      "achieved_at": "2024-10-05T00:00:00Z"
+    }
+  ],
+  "FSP-2026-00555": [
+    {
+      "external_id": "ach-301",
+      "achievement_type": "finalist",
+      "discipline": "Продуктовое программирование",
+      "competition_name": "Чемпионат России по спортивному программированию",
+      "result": "Финалист",
+      "place": null,
+      "role": "participant",
+      "sport_rank": "2 разряд",
+      "achieved_at": "2025-09-14T00:00:00Z"
+    }
+  ]
 }

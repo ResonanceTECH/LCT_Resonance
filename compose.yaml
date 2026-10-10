@@ -1,3 +1,5 @@
+# Full stand: http://localhost:8080 (UI + /api, Swagger /api/docs), mail UI http://localhost:8025.
+# Values below are read from the shell or the root .env; they override backend/.env.
 services:
   postgres:
     image: postgres:16-alpine
@@ -15,6 +17,12 @@ services:
       timeout: 5s
       retries: 10
 
+  # Catches verification emails in the demo; set SMTP_* to a real server for the jury.
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+
   backend:
     build:
       context: ./backend
@@ -23,10 +31,45 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-fspadmin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-fsphack}
       DATABASE_URL_SYNC: postgresql+psycopg://${POSTGRES_USER:-fspadmin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-fsphack}
+      # prod: no verification tokens in API responses, Secure refresh cookie.
+      APP_ENV: ${APP_ENV:-prod}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:8080}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
+      SEED_ON_START: ${SEED_ON_START:-true}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
     ports:
       - "8000:8000"
     depends_on:
       postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/ready', timeout=3)"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_USE_MOCKS: ${VITE_USE_MOCKS:-false}
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
         condition: service_healthy
 
 volumes:

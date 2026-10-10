@@ -10,7 +10,7 @@ import { Button, Input, Select } from '@/shared/ui';
 const schema = z.object({
   displayName: z.string().min(2, 'Укажите имя'),
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(8, 'Минимум 8 символов'),
   role: z.enum(['candidate', 'employer']),
 });
 

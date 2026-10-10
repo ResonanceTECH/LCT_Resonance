@@ -6,6 +6,10 @@ from typing import Protocol
 from pydantic import BaseModel
 
 
+class FSPUnavailableError(Exception):
+    """The FSP registry could not be reached or is not configured."""
+
+
 class FSPMemberDTO(BaseModel):
     member_id: str
     display_name: str | None = None
@@ -25,7 +29,13 @@ class FSPAchievementDTO(BaseModel):
 
 
 class FSPAdapter(Protocol):
+    """Adapters raise `FSPUnavailableError` (or time out) when the registry is down."""
+
     async def get_member(self, member_id: str) -> FSPMemberDTO: ...
+
+    async def find_member(self, *, email: str, full_name: str | None) -> FSPMemberDTO | None:
+        """Look a person up by account email (then full name); None if not a member."""
+        ...
 
     async def get_achievements(self, member_id: str) -> list[FSPAchievementDTO]: ...
 

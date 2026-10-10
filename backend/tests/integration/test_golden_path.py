@@ -1,196 +1,261 @@
-"""Golden path smoke. Requires working DATABASE_URL. Skips if DB unreachable."""
+"""Golden path (Backend.md) through the frontend contract: candidate -> test -> category ->
+FSP -> employer Talent Pool -> match -> offer -> accept -> contacts."""
 
 from __future__ import annotations
 
 import pytest
-from httpx import ASGITransport, AsyncClient
+from httpx import AsyncClient
+from sqlalchemy import select
 
-from app.core.config import get_settings
-from app.main import app
+from app.db.session import SessionLocal
+from app.models.testing import TestAttemptItem as ItemRow  # alias: pytest collects Test*
+from tests.integration.helpers import API, Account, register
+
+pytestmark = pytest.mark.asyncio
+
+NO_HISTORY_FSP_MEMBER = "FSP-2026-00999"
 
 
-async def _db_available() -> bool:
+async def _answer_key() -> dict[str, str]:
+    """Test-only shortcut: the answer key of issued items, which the API never exposes."""
+    async with SessionLocal() as db:
+        rows = await db.execute(select(ItemRow.id, ItemRow.correct_option_id))
+        return {str(item_id): answer for item_id, answer in rows.all()}
+
+
+async def _take_test(
+    client: AsyncClient, cand: Account, specialization: str, grade: str, *, correct: bool
+) -> dict:
+    body = {"specialization": specialization, "stack": ["Python"], "claimedGrade": grade}
+    session = await client.post(f"{API}/tests/sessions", headers=cand.headers, json=body)
+    assert session.status_code == 200, session.text
+    session_id = session.json()["id"]
+    assert session.json()["totalQuestions"] == 10
+    # Starting the same test again resumes it instead of revealing new questions.
+    again = await client.post(f"{API}/tests/sessions", headers=cand.headers, json=body)
+    assert again.json()["id"] == session_id
+
+    key = await _answer_key()
+    for index in range(10):
+        question = (
+            await client.get(f"{API}/tests/sessions/{session_id}/question", headers=cand.headers)
+        ).json()
+        assert question["index"] == index and question["total"] == 10
+        assert "correct" not in str(question).lower()
+        right = key[question["id"]]
+        option = (
+            right if correct else next(o["id"] for o in question["options"] if o["id"] != right)
+        )
+        state = await client.post(
+            f"{API}/tests/sessions/{session_id}/answer",
+            headers=cand.headers,
+            json={"questionId": question["id"], "optionId": option},
+        )
+        assert state.json()["currentIndex"] == index + 1
+    result = await client.post(f"{API}/tests/sessions/{session_id}/finish", headers=cand.headers)
+    assert result.status_code == 200, result.text
+    return result.json()
+
+
+async def test_golden_path_register_to_contacts(client: AsyncClient):
+    cand = await register(client, "candidate", display_name="Голден Пасов")
+    profile = await client.patch(
+        f"{API}/candidates/me",
+        headers=cand.headers,
+        json={
+            # What the frontend profile form sends: skills as names, blanks as "".
+            "fullName": "Голден Пасов",
+            "about": "",
+            "specialization": "Backend",
+            "claimedGrade": "middle",
+            "skills": ["python", "FastAPI", "Postgres"],
+            "salaryFrom": 180000,
+            "salaryTo": 0,
+            "currency": "RUB",
+            "city": "Москва",
+            "workFormat": "remote",
+            "readiness": "actively_looking",
+            "phone": "+79990001122",
+        },
+    )
+    assert profile.status_code == 200, profile.text
+    me = profile.json()
+    assert me["skills"] == ["Python", "FastAPI", "PostgreSQL"]  # synonyms resolved
+    assert (me["specialization"], me["claimedGrade"], me["salaryTo"]) == ("Backend", "middle", None)
+
+    # FSP needs consent; a member without history is a normal 200.
+    no_consent = await client.post(f"{API}/candidates/me/fsp/sync", headers=cand.headers)
+    assert no_consent.json()["code"] == "CONSENT_REQUIRED"
+    await client.put(
+        f"{API}/candidates/me/consents",
+        headers=cand.headers,
+        json={"consents": [{"type": "fsp_sync", "accepted": True}]},
+    )
+    unknown = await client.put(
+        f"{API}/candidates/me/fsp/link", headers=cand.headers, json={"fspMemberId": "FSP-NOPE-1"}
+    )
+    assert unknown.json()["code"] == "FSP_MEMBER_NOT_FOUND"
+    linked = await client.put(
+        f"{API}/candidates/me/fsp/link",
+        headers=cand.headers,
+        json={"fspMemberId": NO_HISTORY_FSP_MEMBER},
+    )
     try:
-        import psycopg
-        from urllib.parse import unquote, urlparse
+        assert linked.status_code == 200, linked.text
+        sync = await client.post(f"{API}/candidates/me/fsp/sync", headers=cand.headers)
+        assert (sync.json()["status"], sync.json()["achievements"]) == ("no_history", [])
 
-        get_settings.cache_clear()
-        s = get_settings()
-        u = urlparse(s.database_url_sync.replace("postgresql+psycopg://", "postgresql://"))
-        with psycopg.connect(
-            host=u.hostname,
-            port=u.port or 5432,
-            dbname=u.path.lstrip("/"),
-            user=u.username,
-            password=unquote(u.password or ""),
-            connect_timeout=2,
-        ) as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT 1")
-        return True
-    except Exception:
-        return False
+        result = await _take_test(client, cand, "Backend", "middle", correct=True)
+        assert (result["score"], result["gradeConfirmed"]) == (100, True)
+        me = (await client.get(f"{API}/candidates/me", headers=cand.headers)).json()
+        assert me["confirmedGrade"] == "middle" and me["testResult"]["score"] == 100
 
-
-@pytest.mark.asyncio
-async def test_golden_path_register_to_contacts():
-    if not await _db_available():
-        pytest.skip("Postgres not available with current .env credentials")
-
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        # health
-        r = await client.get("/health/live")
-        assert r.status_code == 200
-
-        # register candidate
-        email_c = "gp.candidate@example.invalid"
-        reg = await client.post(
-            "/api/v1/auth/register",
-            json={"email": email_c, "password": "CandidatePass123!", "role": "candidate"},
-        )
-        if reg.status_code == 409:
-            pytest.skip("seed/user already exists; run on clean DB for full golden path")
-        assert reg.status_code == 200, reg.text
-        token = reg.json()["verification_token"]
-        assert token
-        assert (await client.post("/api/v1/auth/verify-email", json={"token": token})).status_code == 200
-
-        login_c = await client.post(
-            "/api/v1/auth/login",
-            json={"email": email_c, "password": "CandidatePass123!"},
-        )
-        assert login_c.status_code == 200
-        c_headers = {"Authorization": f"Bearer {login_c.json()['access_token']}"}
-
-        specs = (await client.get("/api/v1/specializations")).json()
-        grades = (await client.get("/api/v1/grades")).json()
-        if not specs or not grades:
-            pytest.skip("taxonomy empty — run seed first")
-        backend = next(s for s in specs if s["slug"] == "backend")
-        middle = next(g for g in grades if g["code"] == "middle")
-
-        await client.patch(
-            "/api/v1/candidates/me",
-            headers=c_headers,
+        # Employer: vacancy (the company is created from companyName), Talent Pool.
+        emp = await register(client, "employer", display_name="Игорь Тестов")
+        vacancy = await client.post(
+            f"{API}/employer/vacancies",
+            headers=emp.headers,
             json={
-                "first_name": "Gold",
-                "last_name": "Path",
-                "city": "Москва",
-                "declared_specialization_id": backend["id"],
-                "declared_grade_id": middle["id"],
-                "salary_min": 180000,
-                "work_format": "remote",
-                "open_to_offers": True,
-                "phone": "+79990001122",
-            },
-        )
-
-        # FSP
-        await client.put(
-            "/api/v1/candidates/me/fsp-link",
-            headers=c_headers,
-            json={"fsp_member_id": "FSP-2026-00123"},
-        )
-        sync = await client.post("/api/v1/candidates/me/fsp-sync", headers=c_headers)
-        assert sync.status_code == 200
-        assert sync.json()["status"] in {"synced", "stale", "no_history"}
-
-        # test
-        start = await client.post(
-            "/api/v1/tests/attempts",
-            headers=c_headers,
-            json={"specialization_id": backend["id"], "grade_id": middle["id"]},
-        )
-        if start.status_code == 409:
-            pytest.skip(start.json())
-        assert start.status_code == 200, start.text
-        attempt = start.json()
-        answers = [
-            {"question_id": q["id"], "option_id": q["options"][0]["id"]}
-            for q in attempt["questions"]
-        ]
-        # force pass: we don't know correct; submit anyway then patch score via second attempt logic
-        submitted = await client.post(
-            f"/api/v1/tests/attempts/{attempt['attempt_id']}/submit",
-            headers=c_headers,
-            json={"answers": answers},
-        )
-        assert submitted.status_code == 200
-
-        # employer side
-        email_e = "gp.employer@example.invalid"
-        reg_e = await client.post(
-            "/api/v1/auth/register",
-            json={"email": email_e, "password": "EmployerPass123!", "role": "employer"},
-        )
-        assert reg_e.status_code == 200
-        await client.post(
-            "/api/v1/auth/verify-email", json={"token": reg_e.json()["verification_token"]}
-        )
-        login_e = await client.post(
-            "/api/v1/auth/login",
-            json={"email": email_e, "password": "EmployerPass123!"},
-        )
-        e_headers = {"Authorization": f"Bearer {login_e.json()['access_token']}"}
-
-        company = await client.post(
-            "/api/v1/companies",
-            headers=e_headers,
-            json={"name": "GP Co", "contact_email": "hr@example.invalid"},
-        )
-        assert company.status_code == 201
-
-        # ensure candidate verified for matching — if test failed, matching may be empty
-        match = await client.post(
-            "/api/v1/matching/search",
-            headers=e_headers,
-            json={
-                "need": {
-                    "specialization_id": backend["id"],
-                    "grade_id": middle["id"],
-                    "salary_from": 200000,
-                    "salary_to": 280000,
-                    "work_format": "remote",
-                    "skills": [],
-                }
-            },
-        )
-        assert match.status_code == 200
-
-        me = await client.get("/api/v1/candidates/me", headers=c_headers)
-        cand_id = me.json()["id"]
-
-        offer = await client.post(
-            "/api/v1/offers",
-            headers=e_headers,
-            json={
-                "candidate_id": cand_id,
+                "companyName": "GP Co",
                 "title": "Backend Developer",
-                "description": "Join us",
-                "salary_from": 220000,
-                "salary_to": 280000,
-                "work_format": "remote",
-                "employer_contact": {"type": "email", "value": "hr@example.invalid"},
+                "description": "API",
+                "specialization": "Backend",
+                "requiredGrade": "middle",
+                "requiredSkills": ["Python", "FastAPI"],
+                "niceToHaveSkills": ["Docker"],
+                "salaryFrom": 200000,
+                "salaryTo": 280000,
+                "currency": "RUB",
+                "workFormat": "remote",
+                "status": "active",
+            },
+        )
+        assert vacancy.status_code == 201, vacancy.text
+        vacancy_id = vacancy.json()["id"]
+        pool = await client.get(
+            f"{API}/candidates", headers=emp.headers, params={"vacancyId": vacancy_id, "limit": 50}
+        )
+        assert pool.status_code == 200, pool.text
+        item = next(i for i in pool.json()["items"] if i["id"] == cand.id)
+        match = item["match"]
+        assert match["matchedSkills"] == ["Python", "FastAPI"]
+        assert match["missingInProfileSkills"] == ["Docker"]
+        assert {
+            "code": "GRADE_CONFIRMED",
+            "label": "грейд middle подтверждён тестом",
+            "positive": True,
+        } in match["reasons"]
+        assert "phone" not in item  # contacts never in the Talent Pool
+
+        # Offer -> contacts locked -> candidate opens (viewed) -> accept -> contacts.
+        offer = await client.post(
+            f"{API}/offers",
+            headers=emp.headers,
+            json={
+                "vacancyId": vacancy_id,
+                "candidateId": cand.id,
+                "companyName": "GP Co",
+                "positionTitle": "Backend Developer",
+                "salaryFrom": 220000,
+                "salaryTo": 280000,
+                "currency": "RUB",
+                "workFormat": "remote",
+                "message": "Готовы обсудить старт",
             },
         )
         assert offer.status_code == 201, offer.text
         offer_id = offer.json()["id"]
+        assert offer.json()["employerContact"] == {"type": "email", "value": emp.email}
+        locked = await client.get(f"{API}/candidates/{cand.id}/contacts", headers=emp.headers)
+        assert (locked.status_code, locked.json()["code"]) == (403, "CONTACTS_LOCKED")
 
-        locked = await client.get(
-            f"/api/v1/offers/{offer_id}/candidate-contact", headers=e_headers
-        )
-        assert locked.status_code == 403
-        assert locked.json()["error"]["code"] == "CONTACTS_LOCKED"
-
-        accepted = await client.post(
-            f"/api/v1/offers/{offer_id}/accept", headers=c_headers
-        )
-        assert accepted.status_code == 200
+        inbox = (await client.get(f"{API}/candidate/offers", headers=cand.headers)).json()
+        assert [o["status"] for o in inbox] == ["new"]
+        opened = await client.get(f"{API}/offers/{offer_id}", headers=cand.headers)
+        assert opened.json()["status"] == "viewed"
+        accepted = await client.post(f"{API}/offers/{offer_id}/accept", headers=cand.headers)
         assert accepted.json()["status"] == "accepted"
+        twice = await client.post(f"{API}/offers/{offer_id}/decline", headers=cand.headers)
+        assert twice.json()["code"] == "INVALID_OFFER_STATE"
 
-        contacts = await client.get(
-            f"/api/v1/offers/{offer_id}/candidate-contact", headers=e_headers
+        contacts = await client.get(f"{API}/candidates/{cand.id}/contacts", headers=emp.headers)
+        assert contacts.json() == {"email": cand.email, "phone": "+79990001122", "telegram": None}
+        notes = (await client.get(f"{API}/notifications", headers=emp.headers)).json()
+        assert notes["unread"] >= 1 and notes["items"][0]["type"] == "offer_accepted"
+    finally:
+        # FSP member ids are unique across accounts: free it for the next run.
+        await client.delete(f"{API}/candidates/me/fsp/link", headers=cand.headers)
+
+
+async def test_failed_test_pauses_same_grade_but_not_lower(client: AsyncClient):
+    cand = await register(client, "candidate")
+    failed = await _take_test(client, cand, "Backend", "middle", correct=False)
+    assert failed["gradeConfirmed"] is False and failed["retryAvailableAt"]
+
+    body = {"specialization": "Backend", "stack": [], "claimedGrade": "middle"}
+    retry = await client.post(f"{API}/tests/sessions", headers=cand.headers, json=body)
+    assert retry.json()["code"] == "TEST_RETRY_COOLDOWN"
+    lower = await client.post(
+        f"{API}/tests/sessions", headers=cand.headers, json={**body, "claimedGrade": "junior"}
+    )
+    # Not blocked by the pause; the demo bank simply has no junior questions.
+    assert lower.json()["code"] == "TEST_BANK_INSUFFICIENT"
+    history = (await client.get(f"{API}/tests/history", headers=cand.headers)).json()
+    assert history[0]["specialization"] == "Backend"
+
+
+async def test_withdrawing_publication_consent_hides_profile(client: AsyncClient):
+    cand = await register(client, "candidate")
+    emp = await register(client, "employer")
+    url = f"{API}/candidates/{cand.id}"
+    assert (await client.get(url, headers=emp.headers)).status_code == 200
+
+    async def publish(accepted: bool) -> None:
+        response = await client.put(
+            f"{API}/candidates/me/consents",
+            headers=cand.headers,
+            json={"consents": [{"type": "profile_publication", "accepted": accepted}]},
         )
-        assert contacts.status_code == 200
-        assert contacts.json()["contact"]["email"] == email_c
+        assert response.status_code == 200, response.text
+
+    await publish(False)
+    assert (await client.get(url, headers=emp.headers)).status_code == 404
+    await publish(True)
+    assert (await client.get(url, headers=emp.headers)).status_code == 200
+
+
+async def test_business_rules_return_clear_errors(client: AsyncClient):
+    unverified = await register(client, "employer", verify=False)
+    cand = await register(client, "candidate")
+    offer = {
+        "candidateId": cand.id,
+        "positionTitle": "Dev",
+        "message": "Привет",
+        "salaryFrom": 100000,
+        "salaryTo": 200000,
+    }
+    blocked = await client.post(f"{API}/offers", headers=unverified.headers, json=offer)
+    assert (blocked.status_code, blocked.json()["code"]) == (403, "EMAIL_NOT_VERIFIED")
+
+    emp = await register(client, "employer")
+    usd = await client.post(f"{API}/offers", headers=emp.headers, json={**offer, "currency": "USD"})
+    assert (usd.status_code, usd.json()["code"]) == (422, "CURRENCY_NOT_SUPPORTED")
+    inverted = await client.post(
+        f"{API}/offers", headers=emp.headers, json={**offer, "salaryFrom": 300000}
+    )
+    assert inverted.json()["code"] == "INVALID_SALARY_RANGE"
+    unknown = await client.post(
+        f"{API}/employer/vacancies",
+        headers=emp.headers,
+        json={
+            "title": "T",
+            "description": "D",
+            "specialization": "Cobol",
+            "requiredGrade": "middle",
+            "salaryFrom": 1,
+            "salaryTo": 2,
+        },
+    )
+    assert unknown.json()["code"] == "UNKNOWN_SPECIALIZATION"
+    wrong_role = await client.get(f"{API}/candidates", headers=cand.headers)
+    assert (wrong_role.status_code, wrong_role.json()["code"]) == (403, "FORBIDDEN_ROLE")

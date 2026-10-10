@@ -16,12 +16,25 @@ class Settings(BaseSettings):
     )
 
     app_env: str = "dev"
+    log_level: str = Field("INFO", alias="LOG_LEVEL")
     database_url: str = Field(..., alias="DATABASE_URL")
     database_url_sync: str = Field(..., alias="DATABASE_URL_SYNC")
     jwt_secret: str = Field(..., alias="JWT_SECRET", min_length=32)
-    jwt_access_ttl_min: int = Field(15, alias="JWT_ACCESS_TTL_MIN")
+    # 8 hours: the frontend keeps the access token and has no refresh flow (Backend.md).
+    jwt_access_ttl_min: int = Field(480, alias="JWT_ACCESS_TTL_MIN")
     jwt_refresh_ttl_days: int = Field(7, alias="JWT_REFRESH_TTL_DAYS")
     cors_origins: str = Field("http://localhost:5173", alias="CORS_ORIGINS")
+    public_api_url: str = Field("http://localhost:8000", alias="PUBLIC_API_URL")
+    # Frontend origin, used for Career Passport links.
+    public_app_url: str = Field("http://localhost:5173", alias="PUBLIC_APP_URL")
+    smtp_host: str = Field("", alias="SMTP_HOST")
+    smtp_port: int = Field(587, alias="SMTP_PORT", ge=1, le=65535)
+    smtp_username: str = Field("", alias="SMTP_USERNAME")
+    smtp_password: str = Field("", alias="SMTP_PASSWORD")
+    smtp_from_email: str = Field("no-reply@example.invalid", alias="SMTP_FROM_EMAIL")
+    smtp_use_ssl: bool = Field(False, alias="SMTP_USE_SSL")
+    smtp_starttls: bool = Field(True, alias="SMTP_STARTTLS")
+    smtp_timeout_sec: int = Field(10, alias="SMTP_TIMEOUT_SEC", ge=1, le=60)
     fsp_provider: str = Field("mock", alias="FSP_PROVIDER")
     fsp_base_url: str = Field("", alias="FSP_BASE_URL")
     fsp_api_token: str = Field("", alias="FSP_API_TOKEN")
@@ -29,8 +42,17 @@ class Settings(BaseSettings):
     fsp_cache_ttl_hours: int = Field(24, alias="FSP_CACHE_TTL_HOURS")
     matcher_provider: str = Field("baseline", alias="MATCHER_PROVIDER")
     ml_matcher_url: str = Field("", alias="ML_MATCHER_URL")
-    pass_score: int = Field(70, alias="PASS_SCORE")
-    grade_cooldown_days: int = Field(90, alias="GRADE_COOLDOWN_DAYS")
+    ml_timeout_sec: float = Field(2.0, alias="ML_TIMEOUT_SEC")
+    pass_score: int = Field(70, alias="PASS_SCORE", ge=0, le=100)
+    grade_cooldown_days: int = Field(90, alias="GRADE_COOLDOWN_DAYS", ge=0)
+    test_attempt_ttl_min: int = Field(30, alias="TEST_ATTEMPT_TTL_MIN", ge=1)
+    # After a failed attempt the same (or a higher) grade can be retried after this pause;
+    # a lower grade stays available immediately.
+    test_retry_cooldown_hours: int = Field(24, alias="TEST_RETRY_COOLDOWN_HOURS", ge=0)
+    # A static question leaves rotation after this many shows (exposure control).
+    static_item_max_exposures: int = Field(200, alias="STATIC_ITEM_MAX_EXPOSURES", ge=1)
+    consent_version: str = Field("2026-10-01", alias="CONSENT_VERSION")
+    rate_limit_enabled: bool = Field(True, alias="RATE_LIMIT_ENABLED")
 
     @property
     def cors_origin_list(self) -> list[str]:

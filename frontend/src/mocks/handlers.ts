@@ -198,6 +198,30 @@ export const handlers = [
     });
   }),
 
+  http.get(`${API}/candidates/me/consents`, async ({ request }) => {
+    const auth = requireUser(request);
+    if ('error' in auth && auth.error) return auth.error;
+    return HttpResponse.json(
+      (['personal_data', 'profile_publication', 'fsp_sync'] as const).map((type) => ({
+        type,
+        accepted: true,
+        version: '2026-10-01',
+        currentVersion: '2026-10-01',
+      })),
+    );
+  }),
+
+  http.put(`${API}/candidates/me/consents`, async ({ request }) => {
+    const auth = requireUser(request);
+    if ('error' in auth && auth.error) return auth.error;
+    const body = (await request.json()) as { consents: { type: string; accepted: boolean }[] };
+    return HttpResponse.json(
+      body.consents.map((c) => ({ ...c, version: '2026-10-01', currentVersion: '2026-10-01' })),
+    );
+  }),
+
+  http.post(`${API}/auth/resend-verification`, async () => HttpResponse.json({ ok: true })),
+
   http.get(`${API}/candidates/:id`, async ({ params, request }) => {
     await delay(200);
     const auth = requireUser(request);
@@ -884,6 +908,8 @@ export const handlers = [
       id: q.id,
       text: q.text,
       options: q.options,
+      index: session.currentIndex,
+      total: session.totalQuestions,
     });
   }),
 

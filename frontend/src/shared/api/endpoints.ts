@@ -10,6 +10,8 @@ import type {
   CandidateDashboard,
   CandidateMatch,
   CandidateProfile,
+  Consent,
+  ConsentType,
   CreateOfferPayload,
   EmployerAnalytics,
   EmployerDashboard,
@@ -38,6 +40,8 @@ export const authApi = {
     apiClient<AuthResponse>('/auth/register', { method: 'POST', body: payload, auth: false }),
   logout: () => apiClient<void>('/auth/logout', { method: 'POST' }),
   me: () => apiClient<AuthUser>('/auth/me'),
+  resendVerification: () =>
+    apiClient<{ ok: boolean }>('/auth/resend-verification', { method: 'POST' }),
 };
 
 export const candidateApi = {
@@ -61,6 +65,9 @@ export const candidateApi = {
       params: { ids: ids.join(',') },
     }),
   completeness: () => apiClient<ProfileCompleteness>('/candidates/me/completeness'),
+  consents: () => apiClient<Consent[]>('/candidates/me/consents'),
+  updateConsents: (consents: { type: ConsentType; accepted: boolean }[]) =>
+    apiClient<Consent[]>('/candidates/me/consents', { method: 'PUT', body: { consents } }),
 };
 
 export const vacancyApi = {

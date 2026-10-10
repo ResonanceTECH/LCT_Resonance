@@ -220,7 +220,6 @@ export function EmployerVacancyFormPage({ mode }: { mode: 'create' | 'edit' }) {
             label="Валюта"
             options={[
               { value: 'RUB', label: 'RUB' },
-              { value: 'USD', label: 'USD' },
             ]}
             {...form.register('currency')}
           />

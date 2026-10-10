@@ -4,16 +4,18 @@ import asyncio
 import json
 from pathlib import Path
 
-from app.integrations.fsp.base import FSPAchievementDTO, FSPMemberDTO
+from app.integrations.fsp.base import FSPAchievementDTO, FSPMemberDTO, FSPUnavailableError
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
-class MockFSPTimeoutError(Exception):
+class MockFSPTimeoutError(FSPUnavailableError):
     pass
 
 
 class MockFSPAdapter:
+    """Synthetic FSP registry from JSON fixtures. `force_timeout` members simulate an outage."""
+
     def __init__(self) -> None:
         self._members = json.loads((FIXTURES / "members.json").read_text(encoding="utf-8"))
         self._achievements = json.loads(
@@ -32,6 +34,16 @@ class MockFSPAdapter:
             display_name=data.get("display_name"),
             exists=True,
         )
+
+    async def find_member(self, *, email: str, full_name: str | None) -> FSPMemberDTO | None:
+        email_key = email.strip().casefold()
+        name_key = (full_name or "").strip().casefold()
+        for data in self._members.values():
+            by_email = (data.get("email") or "").casefold() == email_key
+            by_name = bool(name_key) and (data.get("display_name") or "").casefold() == name_key
+            if by_email or by_name:
+                return await self.get_member(data["member_id"])
+        return None
 
     async def get_achievements(self, member_id: str) -> list[FSPAchievementDTO]:
         data = self._members.get(member_id)

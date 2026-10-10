@@ -1,5 +1,7 @@
 import enum
 
+# Values mirror frontend/src/entities/types.ts and src/shared/lib/labels.ts.
+
 
 class UserRole(str, enum.Enum):
     candidate = "candidate"
@@ -17,6 +19,12 @@ class WorkFormat(str, enum.Enum):
     remote = "remote"
     hybrid = "hybrid"
     office = "office"
+
+
+class Readiness(str, enum.Enum):
+    actively_looking = "actively_looking"
+    open_to_offers = "open_to_offers"
+    not_looking = "not_looking"
 
 
 class GradeVerificationStatus(str, enum.Enum):
@@ -38,18 +46,14 @@ class ContactsVisibility(str, enum.Enum):
 
 class VacancyStatus(str, enum.Enum):
     draft = "draft"
-    published = "published"
+    active = "active"
     closed = "closed"
-
-
-class VacancyVisibility(str, enum.Enum):
-    private = "private"
-    public = "public"
+    archived = "archived"
 
 
 class TestAttemptStatus(str, enum.Enum):
     in_progress = "in_progress"
-    submitted = "submitted"
+    completed = "completed"
     expired = "expired"
 
 
@@ -62,14 +66,23 @@ class FspSyncStatus(str, enum.Enum):
 
 
 class OfferStatus(str, enum.Enum):
-    sent = "sent"
+    new = "new"
     viewed = "viewed"
     accepted = "accepted"
-    rejected = "rejected"
-    withdrawn = "withdrawn"
+    declined = "declined"
+    withdrawn = "withdrawn"  # P1, the frontend has no UI for it yet
 
 
 class ConsentType(str, enum.Enum):
     personal_data = "personal_data"
     profile_publication = "profile_publication"
     fsp_sync = "fsp_sync"
+
+
+class NotificationType(str, enum.Enum):
+    offer_new = "offer_new"
+    offer_accepted = "offer_accepted"
+    offer_declined = "offer_declined"
+    fsp_synced = "fsp_synced"
+    application = "application"
+    system = "system"

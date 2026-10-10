@@ -1,32 +1,36 @@
 from __future__ import annotations
 
-from datetime import datetime
+import datetime as dt
+from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from app.schemas.common import ApiModel
 
 
-class FspLinkRequest(BaseModel):
+class FspAchievementOut(ApiModel):
+    id: UUID
+    title: str
+    discipline: str | None = None
+    date: dt.date | None = None  # module alias: the field name shadows the type
+    place_or_result: str | None = None
+    participant_role: str | None = None
+    sport_rank: str | None = None
+    verified: Literal[True] = True
+
+
+class FspAchievementsResponse(ApiModel):
+    achievements: list[FspAchievementOut]
+    synced_at: dt.datetime | None = None
+    # Extra to the frontend type: synced | no_history (a normal 200) | stale (cache served).
+    status: str = "none"
+
+
+class FspLinkRequest(ApiModel):
     fsp_member_id: str = Field(min_length=3, max_length=128)
 
 
-class FspAchievementOut(BaseModel):
-    id: UUID
-    type: str
-    competition_name: str | None = None
-    discipline: str | None = None
-    place: int | None = None
-    result: str | None = None
-    role: str | None = None
-    sport_rank: str | None = None
-    verified: bool = True
-
-
-class FspSyncResponse(BaseModel):
-    status: str
-    provider: str
+class FspLinkOut(ApiModel):
     fsp_member_id: str
-    last_synced_at: datetime | None = None
-    is_stale: bool = False
-    achievements_count: int = 0
-    achievements: list[FspAchievementOut] = Field(default_factory=list)
+    linked_at: dt.datetime

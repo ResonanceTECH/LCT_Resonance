@@ -1,7 +1,37 @@
+import { useMutation } from '@tanstack/react-query';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '@/features/auth/AuthContext';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
+import { authApi } from '@/shared/api/endpoints';
+import { getErrorMessage } from '@/shared/api/errors';
 import { Button } from '@/shared/ui';
+
+/** Backend rule: an unverified employer cannot send offers, a candidate is not in search. */
+function VerifyEmailBanner() {
+  const { user } = useAuth();
+  const resend = useMutation({ mutationFn: authApi.resendVerification });
+  if (!user || user.emailVerified !== false) return null;
+  const effect =
+    user.role === 'employer'
+      ? 'отправлять предложения можно после подтверждения'
+      : 'до подтверждения профиль не виден работодателям';
+  return (
+    <div className="section-card row" data-testid="verify-email-banner" style={{ margin: '1rem 0' }}>
+      <span>
+        Подтвердите email {user.email}: ссылка отправлена при регистрации, {effect}.
+      </span>
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={() => resend.mutate()}
+        disabled={resend.isPending || resend.isSuccess}
+      >
+        {resend.isSuccess ? 'Письмо отправлено' : 'Отправить ещё раз'}
+      </Button>
+      {resend.isError ? <span className="muted">{getErrorMessage(resend.error)}</span> : null}
+    </div>
+  );
+}
 
 function Shell({ links }: { links: { to: string; label: string }[] }) {
   const { user, logout } = useAuth();
@@ -30,6 +60,7 @@ function Shell({ links }: { links: { to: string; label: string }[] }) {
         </div>
       </header>
       <main className="page">
+        <VerifyEmailBanner />
         <Outlet />
       </main>
     </div>

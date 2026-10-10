@@ -3,7 +3,8 @@
     "member_id": "FSP-2026-00123",
     "display_name": "Alex Demo",
     "exists": true,
-    "has_history": true
+    "has_history": true,
+    "email": "candidate@demo.ru"
   },
   "FSP-2026-00999": {
     "member_id": "FSP-2026-00999",
@@ -17,5 +18,26 @@
     "exists": true,
     "has_history": true,
     "force_timeout": true
+  },
+  "FSP-2026-00456": {
+    "member_id": "FSP-2026-00456",
+    "display_name": "Максим Орлов",
+    "exists": true,
+    "has_history": true,
+    "email": "maxim@demo.ru"
+  },
+  "FSP-2026-00789": {
+    "member_id": "FSP-2026-00789",
+    "display_name": "София Белова",
+    "exists": true,
+    "has_history": true,
+    "email": "sofia@demo.ru"
+  },
+  "FSP-2026-00555": {
+    "member_id": "FSP-2026-00555",
+    "display_name": "Павел Ильин",
+    "email": "candidate1@demo.ru",
+    "exists": true,
+    "has_history": true
   }
 }

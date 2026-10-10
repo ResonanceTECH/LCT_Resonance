@@ -132,7 +132,6 @@ export function CandidateProfileEditPage() {
             label="Валюта"
             options={[
               { value: 'RUB', label: 'RUB' },
-              { value: 'USD', label: 'USD' },
             ]}
             {...form.register('currency')}
           />

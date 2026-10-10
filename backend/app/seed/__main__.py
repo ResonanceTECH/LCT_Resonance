@@ -1,334 +1,388 @@
+"""Demo data: `python -m app.seed`. Idempotent: a second run prints SEED_SKIP."""
+
 from __future__ import annotations
 
 import asyncio
 import random
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.security import hash_password
 from app.db.session import SessionLocal
-from app.models.candidate import CandidateProfile, CandidateSkill
+from app.integrations.fsp.mock import MockFSPAdapter
+from app.models.candidate import CandidateProfile, CandidateSkill, Consent
 from app.models.company import Company
-from app.models.enums import OfferStatus, VacancyStatus
+from app.models.engagement import (
+    Application,
+    Notification,
+    ProfileView,
+    SavedVacancy,
+    ShortlistItem,
+)
+from app.models.enums import (
+    ConsentType,
+    FspSyncStatus,
+    GradeVerificationStatus,
+    NotificationType,
+    OfferStatus,
+    TestAttemptStatus,
+    UserRole,
+)
 from app.models.fsp import FspAchievement, FspLink
 from app.models.offer import Offer
 from app.models.taxonomy import Grade, Skill, Specialization
-from app.models.testing import TestQuestion
+from app.models.testing import TestAttempt, TestQuestion
 from app.models.user import User
 from app.models.vacancy import Vacancy, VacancySkill
+from app.seed import data
+from app.seed.questions import QUESTION_BANK
 
-SPECS = [
-    ("frontend", "Frontend"),
-    ("backend", "Backend"),
-    ("data-ml", "Data / ML"),
-    ("qa", "QA"),
-    ("devops", "DevOps"),
-    ("mobile", "Mobile"),
-    ("algorithms", "Algorithms"),
-]
-GRADES = [("junior", 1, "Junior"), ("middle", 2, "Middle"), ("senior", 3, "Senior")]
-SKILLS = [
-    ("python", "Python"),
-    ("fastapi", "FastAPI"),
-    ("postgresql", "PostgreSQL"),
-    ("django", "Django"),
-    ("docker", "Docker"),
-    ("react", "React"),
-    ("typescript", "TypeScript"),
-    ("kubernetes", "Kubernetes"),
-    ("sql", "SQL"),
-    ("redis", "Redis"),
-    ("pytest", "Pytest"),
-    ("git", "Git"),
-    ("linux", "Linux"),
-    ("aws", "AWS"),
-    ("golang", "Go"),
-    ("java", "Java"),
-    ("kotlin", "Kotlin"),
-    ("swift", "Swift"),
-    ("ml", "Machine Learning"),
-    ("pandas", "Pandas"),
-    ("nodejs", "Node.js"),
-    ("graphql", "GraphQL"),
-    ("ci-cd", "CI/CD"),
-    ("terraform", "Terraform"),
-    ("selenium", "Selenium"),
-]
+# Fixed seed: every run produces the same demo, so screenshots and Precision@k stay stable.
+RNG_SEED = 2026
 
-TOPICS = ["http", "databases", "python", "algorithms", "architecture"]
+
+class _Seeder:
+    def __init__(self, db: AsyncSession) -> None:
+        self.db = db
+        self.rng = random.Random(RNG_SEED)
+        self.now = datetime.now(UTC)
+        # One Argon2 hash for every demo account: hashing is deliberately slow.
+        self.password_hash = hash_password(data.DEMO_PASSWORD)
+        self.specs: dict[str, Specialization] = {}
+        self.grades: dict[str, Grade] = {}
+        self.skills: dict[str, Skill] = {}
+        self.users: dict[str, User] = {}
+        self.companies: dict[str, Company] = {}
+        self.vacancy_index: dict[tuple[str, str], Vacancy] = {}
+        self.candidates_seeded: list[tuple[User, data.SeedCandidate]] = []
+
+    def _user(self, email: str, role: UserRole, display_name: str) -> User:
+        user = User(
+            id=uuid.uuid4(),
+            email=email,
+            password_hash=self.password_hash,
+            display_name=display_name,
+            role=role.value,
+            email_verified_at=self.now,
+        )
+        self.db.add(user)
+        self.users[email] = user
+        return user
+
+    def _demo_phone(self) -> str:
+        r = self.rng.randint
+        return f"+7 900 {r(100, 999)}-{r(10, 99)}-{r(10, 99)}"
+
+    def taxonomy(self) -> None:
+        self.specs = {
+            slug: Specialization(id=uuid.uuid4(), slug=slug, name=name)
+            for slug, name in data.SPECIALIZATIONS
+        }
+        self.grades = {
+            code: Grade(id=uuid.uuid4(), code=code, rank=rank, name=name)
+            for code, rank, name in data.GRADES
+        }
+        self.skills = {
+            slug: Skill(id=uuid.uuid4(), slug=slug, name=name) for slug, name in data.SKILLS
+        }
+        self.db.add_all([*self.specs.values(), *self.grades.values(), *self.skills.values()])
+
+    def questions(self) -> None:
+        for (spec, grade), questions in QUESTION_BANK.items():
+            self.db.add_all(
+                TestQuestion(
+                    specialization_id=self.specs[spec].id,
+                    grade_id=self.grades[grade].id,
+                    topic=q.topic,
+                    prompt=q.prompt,
+                    options=q.options_json(),
+                    correct_answer=q.correct,
+                )
+                for q in questions
+            )
+
+    def employers(self) -> None:
+        self._user(data.ADMIN_EMAIL, UserRole.admin, "Админ Resonance")
+        for employer in data.EMPLOYERS:
+            user = self._user(employer.email, UserRole.employer, employer.display_name)
+            company = Company(
+                id=uuid.uuid4(),
+                owner=user,
+                name=employer.company_name,
+                description=employer.description,
+                industry=employer.industry,
+                contact_name=employer.display_name,
+                contact_email=employer.email,
+            )
+            self.db.add(company)
+            self.companies[employer.email] = company
+
+    def _filler_candidates(self) -> list[data.SeedCandidate]:
+        """Volume for search and pagination, seeded without FSP data (ТЗ edge case).
+
+        candidate1@demo.ru is in the mock registry: its first sync links it automatically.
+        """
+        result = []
+        for i, name in enumerate(data.FILLER_NAMES, start=1):
+            spec = "backend" if i % 2 else "frontend"
+            tested = i % 4 != 0  # every 4th candidate has not taken a test yet
+            salary_from = self.rng.randrange(150000, 300000, 10000)
+            result.append(
+                data.SeedCandidate(
+                    email=f"candidate{i}@demo.ru",
+                    full_name=name,
+                    specialization=spec,
+                    grade=self.rng.choice(["middle", "middle", "junior"]) if tested else None,
+                    test_score=self.rng.randint(70, 95) if tested else None,
+                    skills=tuple(self.rng.sample(data.SKILL_POOLS[spec], 3)),
+                    salary_from=salary_from,
+                    salary_to=salary_from + 60000,
+                    work_format=self.rng.choice(["remote", "hybrid", "office"]),
+                    city=self.rng.choice(data.CITIES),
+                    desired_position=f"{spec.capitalize()} Developer",
+                    experience_years=self.rng.randint(1, 6),
+                    readiness="not_looking" if i == len(data.FILLER_NAMES) else "open_to_offers",
+                )
+            )
+        return result
+
+    def candidates(self) -> None:
+        for seed in [*data.NAMED_CANDIDATES, *self._filler_candidates()]:
+            user = self._user(seed.email, UserRole.candidate, seed.full_name)
+            spec = self.specs[seed.specialization]
+            verified_grade = self.grades[seed.grade] if seed.grade else None
+            profile = CandidateProfile(
+                user=user,
+                full_name=seed.full_name,
+                about=seed.about or None,
+                phone=self._demo_phone(),
+                telegram=f"@{seed.email.split('@')[0].replace('.', '_')}_demo",
+                city=seed.city,
+                experience_years=seed.experience_years,
+                desired_position=seed.desired_position or None,
+                declared_specialization_id=spec.id,
+                declared_grade_id=(verified_grade or self.grades["middle"]).id,
+                verified_specialization_id=spec.id if verified_grade else None,
+                verified_grade_id=verified_grade.id if verified_grade else None,
+                grade_verification_status=(
+                    GradeVerificationStatus.verified.value
+                    if verified_grade
+                    else GradeVerificationStatus.not_tested.value
+                ),
+                last_grade_change_at=self.now if verified_grade else None,
+                last_test_score=seed.test_score,
+                salary_from=seed.salary_from,
+                salary_to=seed.salary_to,
+                work_format=seed.work_format,
+                readiness=seed.readiness,
+                skills=[CandidateSkill(skill=self.skills[s], level=4) for s in seed.skills],
+            )
+            self.db.add(profile)
+            self.candidates_seeded.append((user, seed))
+
+    async def after_profiles(self) -> None:
+        """Rows that reference profiles without an ORM relationship: the unit of work
+        cannot order these inserts by itself, so they go after the profiles are flushed."""
+        fsp = MockFSPAdapter()
+        version = get_settings().consent_version
+        for user, seed in self.candidates_seeded:
+            self.db.add_all(
+                Consent(user_id=user.id, type=t.value, version=version, accepted_at=self.now)
+                for t in ConsentType
+            )
+            if seed.grade and seed.test_score is not None:
+                # The passed test behind the confirmed grade (shown as `testResult`).
+                finished = self.now - timedelta(days=self.rng.randint(3, 30))
+                self.db.add(
+                    TestAttempt(
+                        candidate_user_id=user.id,
+                        specialization_id=self.specs[seed.specialization].id,
+                        grade_id=self.grades[seed.grade].id,
+                        status=TestAttemptStatus.completed.value,
+                        score=seed.test_score,
+                        passed=True,
+                        current_index=10,
+                        expires_at=finished,
+                        submitted_at=finished,
+                    )
+                )
+            if seed.fsp_member_id:
+                await self._fsp(user, seed.fsp_member_id, fsp)
+
+    async def _fsp(self, user: User, member_id: str, fsp: MockFSPAdapter) -> None:
+        """Same data a real sync would fetch from the mock registry."""
+        member = await fsp.get_member(member_id)
+        achievements = await fsp.get_achievements(member_id)
+        self.db.add(
+            FspLink(
+                candidate_user_id=user.id,
+                fsp_member_id=member_id,
+                sync_status=FspSyncStatus.synced.value,
+                last_synced_at=self.now,
+                raw_snapshot={
+                    "member": member.model_dump(mode="json"),
+                    "achievements": [a.model_dump(mode="json") for a in achievements],
+                },
+            )
+        )
+        self.db.add_all(
+            FspAchievement(
+                candidate_user_id=user.id,
+                external_id=a.external_id,
+                achievement_type=a.achievement_type,
+                discipline=a.discipline,
+                competition_name=a.competition_name,
+                result=a.result,
+                place=a.place,
+                role=a.role,
+                sport_rank=a.sport_rank,
+                achieved_at=a.achieved_at,
+            )
+            for a in achievements
+        )
+
+    def vacancies(self) -> None:
+        for seed in data.VACANCIES:
+            company = self.companies[seed.employer]
+            vacancy = Vacancy(
+                id=uuid.uuid4(),
+                company_id=company.id,
+                company_name=company.name,
+                title=seed.title,
+                description=seed.description,
+                specialization_id=self.specs[seed.specialization].id,
+                grade_id=self.grades[seed.grade].id,
+                salary_from=seed.salary_from,
+                salary_to=seed.salary_to,
+                work_format=seed.work_format,
+                city=seed.city,
+                status=seed.status.value,
+                skills=[
+                    *(
+                        VacancySkill(skill=self.skills[s], required=True, weight=2)
+                        for s in seed.required
+                    ),
+                    *(
+                        VacancySkill(skill=self.skills[s], required=False, weight=1)
+                        for s in seed.optional
+                    ),
+                ],
+            )
+            self.db.add(vacancy)
+            self.vacancy_index[(seed.employer, seed.title)] = vacancy
+
+    def _notify(self, user: User, kind: NotificationType, title: str, body: str, href: str) -> None:
+        self.db.add(
+            Notification(user_id=user.id, type=kind.value, title=title, body=body, href=href)
+        )
+
+    def offers(self) -> None:
+        for seed in data.OFFERS:
+            vacancy = self.vacancy_index[(seed.employer, seed.vacancy)] if seed.vacancy else None
+            employer, candidate = self.users[seed.employer], self.users[seed.candidate]
+            company = self.companies[seed.employer]
+            responded = seed.status in {OfferStatus.accepted, OfferStatus.declined}
+            offer = Offer(
+                id=uuid.uuid4(),
+                employer_user_id=employer.id,
+                candidate_user_id=candidate.id,
+                company_id=company.id,
+                vacancy_id=vacancy.id if vacancy else None,
+                company_name=company.name,
+                position_title=seed.position_title,
+                message=f"Приглашаем обсудить позицию «{seed.position_title}». "
+                "Зарплата и формат указаны в предложении.",
+                salary_from=seed.salary_from,
+                salary_to=seed.salary_to,
+                work_format=seed.work_format,
+                employer_contact={"type": "email", "value": seed.employer},
+                status=seed.status.value,
+                viewed_at=self.now if seed.status != OfferStatus.new else None,
+                responded_at=self.now if responded else None,
+            )
+            self.db.add(offer)
+            self._notify(
+                candidate,
+                NotificationType.offer_new,
+                "Новое предложение",
+                f"{company.name}: {seed.position_title}",
+                f"/candidate/offers/{offer.id}",
+            )
+            if responded:
+                accepted = seed.status == OfferStatus.accepted
+                self._notify(
+                    employer,
+                    NotificationType.offer_accepted
+                    if accepted
+                    else NotificationType.offer_declined,
+                    "Оффер принят" if accepted else "Оффер отклонён",
+                    f"{seed.position_title} · {candidate.display_name}",
+                    f"/employer/candidates/{candidate.id}" if accepted else "/employer/offers",
+                )
+
+    def engagement(self) -> None:
+        for employer_email, candidate_emails in data.SHORTLIST.items():
+            employer = self.users[employer_email]
+            for email in candidate_emails:
+                candidate_id = self.users[email].id
+                self.db.add(
+                    ShortlistItem(employer_user_id=employer.id, candidate_user_id=candidate_id)
+                )
+                self.db.add(
+                    ProfileView(candidate_user_id=candidate_id, employer_user_id=employer.id)
+                )
+        for email, vacancy_keys in data.SAVED_VACANCIES.items():
+            for key in vacancy_keys:
+                self.db.add(
+                    SavedVacancy(
+                        candidate_user_id=self.users[email].id,
+                        vacancy_id=self.vacancy_index[key].id,
+                    )
+                )
+        for email, vacancy_keys in data.APPLICATIONS.items():
+            candidate = self.users[email]
+            for employer_email, title in vacancy_keys:
+                self.db.add(
+                    Application(
+                        candidate_user_id=candidate.id,
+                        vacancy_id=self.vacancy_index[(employer_email, title)].id,
+                    )
+                )
+                self._notify(
+                    self.users[employer_email],
+                    NotificationType.application,
+                    "Новый отклик",
+                    f"{candidate.display_name} откликнулся на «{title}»",
+                    f"/employer/candidates/{candidate.id}",
+                )
 
 
 async def seed() -> None:
     async with SessionLocal() as db:
-        existing = (await db.execute(select(Specialization).limit(1))).scalar_one_or_none()
-        if existing:
+        if (await db.execute(select(Specialization.id).limit(1))).first():
             print("SEED_SKIP already seeded")
             return
 
-        specs: dict[str, Specialization] = {}
-        for slug, name in SPECS:
-            row = Specialization(id=uuid.uuid4(), slug=slug, name=name)
-            db.add(row)
-            specs[slug] = row
-
-        grades: dict[str, Grade] = {}
-        for code, rank, name in GRADES:
-            row = Grade(id=uuid.uuid4(), code=code, rank=rank, name=name)
-            db.add(row)
-            grades[code] = row
-
-        skills: dict[str, Skill] = {}
-        for slug, name in SKILLS:
-            row = Skill(id=uuid.uuid4(), slug=slug, name=name)
-            db.add(row)
-            skills[slug] = row
+        seeder = _Seeder(db)
+        seeder.taxonomy()
+        seeder.employers()
+        await db.flush()  # users and taxonomy first: everything below references them
+        seeder.questions()
+        seeder.candidates()
+        seeder.vacancies()
         await db.flush()
-
-        # questions: 10+ per backend/middle topic pools
-        for topic in TOPICS:
-            for i in range(6):
-                opts = [
-                    {"id": "a", "text": f"{topic} option A {i}"},
-                    {"id": "b", "text": f"{topic} option B {i}"},
-                    {"id": "c", "text": f"{topic} option C {i}"},
-                ]
-                db.add(
-                    TestQuestion(
-                        id=uuid.uuid4(),
-                        specialization_id=specs["backend"].id,
-                        grade_id=grades["middle"].id,
-                        topic=topic,
-                        difficulty=2,
-                        prompt=f"[{topic}] Demo question #{i+1}?",
-                        options=opts,
-                        correct_answer="b",
-                    )
-                )
-
-        admin = User(
-            id=uuid.uuid4(),
-            email="admin@example.invalid",
-            password_hash=hash_password("AdminPass123!"),
-            role="admin",
-            email_verified_at=datetime.now(UTC),
-        )
-        db.add(admin)
-
-        # employers
-        employers = []
-        for i in range(2):
-            u = User(
-                id=uuid.uuid4(),
-                email=f"employer{i+1}@example.invalid",
-                password_hash=hash_password("EmployerPass123!"),
-                role="employer",
-                email_verified_at=datetime.now(UTC),
-            )
-            db.add(u)
-            employers.append(u)
-        await db.flush()
-
-        companies = []
-        for i, emp in enumerate(employers):
-            c = Company(
-                id=uuid.uuid4(),
-                owner_user_id=emp.id,
-                name=f"TechCompany {i+1}",
-                description="Fintech product",
-                industry="FinTech",
-                website="https://example.invalid",
-                contact_name="HR",
-                contact_email=f"hr{i+1}@example.invalid",
-            )
-            db.add(c)
-            companies.append(c)
-        # third company for employer1
-        companies.append(
-            Company(
-                id=uuid.uuid4(),
-                owner_user_id=employers[0].id,
-                name="Second Co",
-                description="Second",
-                contact_email="hr@example.invalid",
-            )
-        )
-        db.add(companies[-1])
-        await db.flush()
-
-        vacancies = []
-        for i in range(5):
-            v = Vacancy(
-                id=uuid.uuid4(),
-                company_id=companies[i % len(companies)].id,
-                title="Backend Developer",
-                description="API development",
-                specialization_id=specs["backend"].id,
-                grade_id=grades["middle"].id,
-                salary_from=200000,
-                salary_to=260000,
-                work_format="remote",
-                status=VacancyStatus.published.value,
-            )
-            db.add(v)
-            vacancies.append(v)
-        await db.flush()
-        for v in vacancies:
-            for slug, required in [("python", True), ("fastapi", True), ("docker", False)]:
-                db.add(
-                    VacancySkill(
-                        id=uuid.uuid4(),
-                        vacancy_id=v.id,
-                        skill_id=skills[slug].id,
-                        required=required,
-                        weight=2 if required else 1,
-                    )
-                )
-
-        # Candidate A
-        cand_a = User(
-            id=uuid.uuid4(),
-            email="candidate.a@example.invalid",
-            password_hash=hash_password("CandidatePass123!"),
-            role="candidate",
-            email_verified_at=datetime.now(UTC),
-        )
-        db.add(cand_a)
-        # Candidate B
-        cand_b = User(
-            id=uuid.uuid4(),
-            email="candidate.b@example.invalid",
-            password_hash=hash_password("CandidatePass123!"),
-            role="candidate",
-            email_verified_at=datetime.now(UTC),
-        )
-        db.add(cand_b)
-        await db.flush()
-
-        async def make_profile(
-            user,
-            first,
-            last,
-            score,
-            skill_slugs,
-            with_fsp: bool,
-            *,
-            fsp_member_id: str | None = None,
-            fsp_external_id: str = "seed-prize",
-        ):
-            p = CandidateProfile(
-                user_id=user.id,
-                first_name=first,
-                last_name=last,
-                phone="+70000000000",
-                telegram=f"@{first.lower()}_demo",
-                city="Москва",
-                experience_months=18,
-                declared_specialization_id=specs["backend"].id,
-                declared_grade_id=grades["middle"].id,
-                verified_specialization_id=specs["backend"].id,
-                verified_grade_id=grades["middle"].id,
-                grade_verification_status="verified",
-                salary_min=190000,
-                work_format="remote",
-                open_to_offers=True,
-                last_test_score=score,
-            )
-            db.add(p)
-            # FK targets on candidate_profiles — flush before skills/FSP
-            await db.flush()
-            for slug in skill_slugs:
-                db.add(
-                    CandidateSkill(
-                        id=uuid.uuid4(),
-                        candidate_user_id=user.id,
-                        skill_id=skills[slug].id,
-                        level=4,
-                    )
-                )
-            if with_fsp:
-                db.add(
-                    FspLink(
-                        candidate_user_id=user.id,
-                        fsp_member_id=fsp_member_id or f"FSP-{user.id.hex[:12].upper()}",
-                        sync_status="synced",
-                    )
-                )
-                db.add(
-                    FspAchievement(
-                        id=uuid.uuid4(),
-                        candidate_user_id=user.id,
-                        external_id=fsp_external_id,
-                        achievement_type="prize",
-                        competition_name="Всероссийские соревнования",
-                        discipline="Algorithms",
-                        place=3,
-                        verified=True,
-                    )
-                )
-            await db.flush()
-            return p
-
-        await make_profile(
-            cand_a,
-            "Алексей",
-            "К",
-            86,
-            ["python", "fastapi", "postgresql"],
-            True,
-            fsp_member_id="FSP-2026-00123",
-        )
-        await make_profile(cand_b, "Борис", "Д", 91, ["python", "django"], False)
-
-        # more candidates, some without FSP
-        for i in range(10):
-            u = User(
-                id=uuid.uuid4(),
-                email=f"candidate{i+1}@example.invalid",
-                password_hash=hash_password("CandidatePass123!"),
-                role="candidate",
-                email_verified_at=datetime.now(UTC),
-            )
-            db.add(u)
-            await db.flush()
-            await make_profile(
-                u,
-                f"Cand{i+1}",
-                "X",
-                random.randint(60, 95),
-                random.sample(list(skills.keys()), 3),
-                with_fsp=(i >= 5),
-                fsp_member_id=f"FSP-SEED-{i+1:03d}" if i >= 5 else None,
-                fsp_external_id=f"seed-{i}",
-            )
-
-        await db.flush()
-        # sample offers
-        for status in [
-            OfferStatus.sent.value,
-            OfferStatus.viewed.value,
-            OfferStatus.accepted.value,
-            OfferStatus.rejected.value,
-        ]:
-            db.add(
-                Offer(
-                    id=uuid.uuid4(),
-                    employer_user_id=employers[0].id,
-                    candidate_user_id=cand_a.id if status != OfferStatus.accepted.value else cand_b.id,
-                    company_id=companies[0].id,
-                    vacancy_id=vacancies[0].id if status != OfferStatus.sent.value else None,
-                    title="Backend Developer",
-                    description="Invite",
-                    salary_from=220000,
-                    salary_to=280000,
-                    employer_contact={"type": "email", "value": "hr@example.invalid"},
-                    status=status,
-                )
-            )
-
+        await seeder.after_profiles()
+        seeder.offers()
+        seeder.engagement()
         await db.commit()
-        print("SEED_OK")
+    print(
+        f"SEED_OK accounts={len(seeder.users)} vacancies={len(seeder.vacancy_index)} "
+        f"password={data.DEMO_PASSWORD}"
+    )
 
 
 def main() -> None:

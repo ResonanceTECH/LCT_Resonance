@@ -1,61 +1,131 @@
 from __future__ import annotations
 
+from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import Field, model_validator
 
-from app.schemas.common import ORMModel
+from app.schemas.candidate import CandidateMatch
+from app.schemas.common import (
+    ApiModel,
+    Currency,
+    GradeValue,
+    OptionalText,
+    WorkFormatValue,
+    check_salary_range,
+    reject_explicit_nulls,
+)
+
+VacancyStatusValue = Literal["draft", "active", "closed", "archived"]
+SkillList = list[str]
 
 
-class VacancySkillIn(BaseModel):
-    skill_id: UUID
-    required: bool = True
-    weight: int | None = None
-
-
-class VacancyCreate(BaseModel):
-    title: str
-    description: str
-    specialization_id: UUID
-    grade_id: UUID
-    salary_from: int = Field(gt=0)
-    salary_to: int = Field(gt=0)
-    currency: str = "RUB"
-    work_format: str = "remote"
-    visibility: str = "private"
-    skills: list[VacancySkillIn] = Field(default_factory=list)
+class VacancyCreate(ApiModel):
+    # Snapshot for the vacancy card; defaults to the employer's company profile name.
+    company_name: OptionalText = Field(default=None, max_length=255)
+    title: str = Field(min_length=1, max_length=255)
+    description: str = Field(min_length=1, max_length=10000)
+    specialization: str = Field(min_length=1, max_length=128)
+    required_grade: GradeValue
+    required_skills: SkillList = Field(default_factory=list, max_length=30)
+    nice_to_have_skills: SkillList = Field(default_factory=list, max_length=30)
+    salary_from: int
+    salary_to: int
+    currency: Currency = "RUB"
+    city: OptionalText = Field(default=None, max_length=128)
+    work_format: WorkFormatValue = "remote"
+    extra_info: OptionalText = Field(default=None, max_length=5000)
+    status: VacancyStatusValue = "draft"
 
     @model_validator(mode="after")
-    def validate_salary(self) -> VacancyCreate:
-        if self.salary_to < self.salary_from:
-            raise ValueError("salary_to must be >= salary_from")
+    def _validate(self) -> VacancyCreate:
+        check_salary_range(self.salary_from, self.salary_to)
         return self
 
 
-class VacancyUpdate(BaseModel):
-    title: str | None = None
-    description: str | None = None
-    specialization_id: UUID | None = None
-    grade_id: UUID | None = None
-    salary_from: int | None = Field(default=None, gt=0)
-    salary_to: int | None = Field(default=None, gt=0)
-    currency: str | None = None
-    work_format: str | None = None
-    visibility: str | None = None
-    skills: list[VacancySkillIn] | None = None
+class VacancyUpdate(ApiModel):
+    company_name: OptionalText = Field(default=None, max_length=255)
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+    description: str | None = Field(default=None, min_length=1, max_length=10000)
+    specialization: str | None = Field(default=None, min_length=1, max_length=128)
+    required_grade: GradeValue | None = None
+    required_skills: SkillList | None = Field(default=None, max_length=30)
+    nice_to_have_skills: SkillList | None = Field(default=None, max_length=30)
+    salary_from: int | None = None
+    salary_to: int | None = None
+    currency: Currency | None = None
+    city: OptionalText = Field(default=None, max_length=128)
+    work_format: WorkFormatValue | None = None
+    extra_info: OptionalText = Field(default=None, max_length=5000)
+    status: VacancyStatusValue | None = None
+
+    @model_validator(mode="after")
+    def _validate(self) -> VacancyUpdate:
+        reject_explicit_nulls(
+            self,
+            "title",
+            "description",
+            "specialization",
+            "required_grade",
+            "salary_from",
+            "salary_to",
+            "work_format",
+            "status",
+        )
+        check_salary_range(self.salary_from, self.salary_to)
+        return self
 
 
-class VacancyOut(ORMModel):
+class VacancyOut(ApiModel):
     id: UUID
-    company_id: UUID
+    employer_id: UUID
+    company_name: str
     title: str
     description: str
-    specialization_id: UUID
-    grade_id: UUID
+    specialization: str
+    required_grade: GradeValue
+    required_skills: list[str]
+    nice_to_have_skills: list[str]
     salary_from: int
     salary_to: int
     currency: str
-    work_format: str
-    visibility: str
-    status: str
-    skills: list[VacancySkillIn] = Field(default_factory=list)
+    city: str | None = None
+    work_format: WorkFormatValue
+    extra_info: str | None = None
+    status: VacancyStatusValue
+    created_at: datetime
+    updated_at: datetime
+
+
+class VacancyWithMatch(VacancyOut):
+    match: CandidateMatch | None = None
+    saved: bool | None = None
+    applied: bool | None = None
+
+
+class VacancyParseRequest(ApiModel):
+    text: str = Field(min_length=1, max_length=20000)
+
+
+class VacancyParseResult(ApiModel):
+    title: str | None = None
+    description: str | None = None
+    specialization: str | None = None
+    required_grade: GradeValue | None = None
+    required_skills: list[str] = Field(default_factory=list)
+    nice_to_have_skills: list[str] = Field(default_factory=list)
+    salary_from: int | None = None
+    salary_to: int | None = None
+    work_format: WorkFormatValue | None = None
+    city: str | None = None
+
+
+class ApplyResponse(ApiModel):
+    ok: bool = True
+    message: str
+
+
+class SavedResponse(ApiModel):
+    ok: bool = True
+    saved: bool
