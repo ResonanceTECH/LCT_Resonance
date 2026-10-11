@@ -264,10 +264,10 @@ export const termsOfUse = {
     {
       type: 'dl',
       items: [
-        { term: 'Оператор', description: '[наименование / ФИО]' },
-        { term: 'Адрес', description: '[адрес оператора]' },
-        { term: 'Электронная почта поддержки', description: '[email]' },
-        { term: 'Адрес сайта', description: '[домен FSP Talent]' },
+        {
+          term: 'Электронная почта поддержки',
+          description: 'dariachugu_work@inbox.ru',
+        },
       ],
     },
     {

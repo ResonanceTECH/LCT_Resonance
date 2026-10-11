@@ -14,12 +14,12 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(8, 'Минимум 8 символов'),
   role: z.enum(['candidate', 'employer']),
-  termsAccepted: z.literal(true, {
-    errorMap: () => ({ message: 'Примите Условия использования' }),
-  }),
-  personalDataConsent: z.literal(true, {
-    errorMap: () => ({ message: 'Нужно согласие на обработку персональных данных' }),
-  }),
+  termsAccepted: z
+    .boolean()
+    .refine((v) => v, { message: 'Примите Условия использования' }),
+  personalDataConsent: z
+    .boolean()
+    .refine((v) => v, { message: 'Нужно согласие на обработку персональных данных' }),
   publicPassportConsent: z.boolean(),
 });
 
@@ -36,8 +36,8 @@ export function RegisterPage() {
       email: '',
       password: '',
       role: 'candidate',
-      termsAccepted: undefined as unknown as true,
-      personalDataConsent: undefined as unknown as true,
+      termsAccepted: false,
+      personalDataConsent: false,
       publicPassportConsent: false,
     },
   });
