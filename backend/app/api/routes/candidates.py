@@ -56,7 +56,7 @@ async def get_consents(db: DbSession, user: CandidateUser) -> list[ConsentOut]:
 async def put_consents(
     payload: ConsentsUpdate, db: DbSession, user: CandidateUser
 ) -> list[ConsentOut]:
-    """Accept or withdraw: personal_data, profile_publication, fsp_sync (152-ФЗ)."""
+    """Accept or withdraw: terms, personal_data, profile_publication, fsp_sync (152-ФЗ)."""
     return await candidate_service.update_consents(db, user.id, payload)
 
 

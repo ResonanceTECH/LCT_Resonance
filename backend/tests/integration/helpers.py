@@ -41,7 +41,15 @@ async def register(
     email = unique_email(role)
     response = await client.post(
         f"{API}/auth/register",
-        json={"email": email, "password": password, "role": role, "displayName": display_name},
+        json={
+            "email": email,
+            "password": password,
+            "role": role,
+            "displayName": display_name,
+            "termsAccepted": True,
+            "personalDataConsent": True,
+            "publicPassportConsent": False,
+        },
     )
     assert response.status_code == 200, response.text
     body = response.json()

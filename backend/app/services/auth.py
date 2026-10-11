@@ -85,7 +85,15 @@ async def start_session(db: AsyncSession, user: User, *, user_agent: str | None)
 
 
 async def register_user(
-    db: AsyncSession, *, email: str, password: str, role: str, display_name: str
+    db: AsyncSession,
+    *,
+    email: str,
+    password: str,
+    role: str,
+    display_name: str,
+    terms_accepted: bool,
+    personal_data_consent: bool,
+    public_passport_consent: bool = False,
 ) -> tuple[User, str]:
     """Create the account (and a starter candidate profile); returns the raw verify token."""
     if await _find_user_by_email(db, email) is not None:
@@ -120,6 +128,17 @@ async def register_user(
                 readiness=Readiness.open_to_offers.value,
             )
         )
+
+    consent_changes: list[ConsentChange] = []
+    if terms_accepted:
+        consent_changes.append(ConsentChange(type="terms", accepted=True))
+    if personal_data_consent:
+        consent_changes.append(ConsentChange(type="personal_data", accepted=True))
+    if public_passport_consent and role == UserRole.candidate.value:
+        consent_changes.append(ConsentChange(type="profile_publication", accepted=True))
+    if consent_changes:
+        await consents_service.apply_changes(db, user.id, consent_changes)
+
     token_row, raw_token = _new_verification_token(user.id)
     db.add(token_row)
     await write_audit(
@@ -128,7 +147,11 @@ async def register_user(
         entity_type="user",
         entity_id=str(user.id),
         actor_user_id=user.id,
-        metadata={"role": role},
+        metadata={
+            "role": role,
+            "public_passport_consent": public_passport_consent
+            and role == UserRole.candidate.value,
+        },
     )
     await db.commit()
     return user, raw_token
