@@ -21,13 +21,27 @@ export function formatSalary(
 
 export function formatGrade(grade: Grade): string {
   const map: Record<Grade, string> = {
-    intern: 'Intern',
-    junior: 'Junior',
-    middle: 'Middle',
-    senior: 'Senior',
-    lead: 'Lead',
+    intern: 'Стажёр',
+    junior: 'Джуниор',
+    middle: 'Мидл',
+    senior: 'Сеньор',
+    lead: 'Лид',
   };
   return map[grade];
+}
+
+export function formatSpecialization(specialization: string): string {
+  const map: Record<string, string> = {
+    Frontend: 'Фронтенд',
+    Backend: 'Бэкенд',
+    Fullstack: 'Фулстек',
+    Mobile: 'Мобайл',
+    DevOps: 'DevOps',
+    'Data Science': 'Data Science',
+    QA: 'QA',
+    Web: 'Веб',
+  };
+  return map[specialization] ?? specialization;
 }
 
 export function formatWorkFormat(format: WorkFormat): string {

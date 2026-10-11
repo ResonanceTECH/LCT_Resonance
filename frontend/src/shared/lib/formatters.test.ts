@@ -17,7 +17,7 @@ describe('formatters', () => {
   });
 
   it('maps domain enums to RU labels used in UI', () => {
-    expect(formatGrade('middle')).toBe('Middle');
+    expect(formatGrade('middle')).toBe('Мидл');
     expect(formatWorkFormat('remote')).toBe('Удалённо');
     expect(formatReadiness('open_to_offers')).toBe('Открыт к предложениям');
     expect(formatOfferStatus('accepted')).toBe('Принято');
