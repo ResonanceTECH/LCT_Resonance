@@ -39,6 +39,8 @@ class MatcherCandidate(ApiModel):
     id: str
     specialization: str | None = None
     confirmed_grade: str | None = None
+    # Optional; ML uses it for grade_status and never auto-downgrades (ML-03).
+    declared_grade: str | None = None
     test_score: int | None = None
     skills: list[str] = Field(default_factory=list)
     experience_years: int | None = None
@@ -74,6 +76,12 @@ class MatcherMatch(ApiModel):
     reasons: list[MatcherReason] = Field(default_factory=list)
     # For debugging and the defence; never sent to the frontend.
     components: MatchComponents | None = None
+    # Optional ML diagnostics (ml-v1); Backend ignores them when building FE DTOs.
+    category: str | None = None
+    category_score: float | None = None
+    grade_status: str | None = None
+    salary_compatible: bool | None = None
+    work_format_compatible: bool | None = None
 
 
 class MatchingResponse(ApiModel):
