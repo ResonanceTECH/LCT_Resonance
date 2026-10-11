@@ -1,5 +1,7 @@
 import { apiClient } from '@/shared/api/client';
 import type {
+  AdminAssessmentsResponse,
+  AdminCategoriesResponse,
   AdminOverview,
   AdminUserRow,
   AppNotification,
@@ -152,13 +154,19 @@ export const dashboardApi = {
 export const adminApi = {
   overview: () => apiClient<AdminOverview>('/admin/overview'),
   users: () => apiClient<AdminUserRow[]>('/admin/users'),
-  setUserStatus: (userId: string, status: 'active' | 'blocked') =>
+  setUserStatus: (
+    userId: string,
+    status: 'active' | 'blocked',
+    reason?: string,
+  ) =>
     apiClient<AdminUserRow>(`/admin/users/${userId}/status`, {
       method: 'POST',
-      body: { status },
+      body: { status, reason },
     }),
   offers: () => apiClient<Offer[]>('/admin/offers'),
   vacancies: () => apiClient<Vacancy[]>('/admin/vacancies'),
+  assessments: () => apiClient<AdminAssessmentsResponse>('/admin/assessments'),
+  categories: () => apiClient<AdminCategoriesResponse>('/admin/categories'),
 };
 
 export const testingApi = {
