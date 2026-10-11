@@ -103,13 +103,12 @@ export function CandidateLayout() {
   return (
     <Shell
       links={[
-        { to: '/candidate', label: 'Dashboard' },
+        { to: '/candidate', label: 'Обзор' },
         { to: '/candidate/profile', label: 'Профиль' },
         { to: '/candidate/fsp', label: 'ФСП' },
         { to: '/candidate/offers', label: 'Предложения' },
         { to: '/candidate/testing', label: 'Тест' },
         { to: '/candidate/vacancies', label: 'Вакансии' },
-        { to: '/candidate/notifications', label: 'Уведомления' },
       ]}
     />
   );
@@ -119,13 +118,12 @@ export function EmployerLayout() {
   return (
     <Shell
       links={[
-        { to: '/employer', label: 'Dashboard' },
-        { to: '/employer/talent-pool', label: 'Talent Pool' },
+        { to: '/employer', label: 'Обзор' },
+        { to: '/employer/talent-pool', label: 'Пул кандидатов' },
         { to: '/employer/vacancies', label: 'Вакансии' },
-        { to: '/employer/shortlist', label: 'Shortlist' },
+        { to: '/employer/shortlist', label: 'Избранное' },
         { to: '/employer/compare', label: 'Сравнение' },
-        { to: '/employer/offers', label: 'Офферы' },
-        { to: '/employer/notifications', label: 'Уведомления' },
+        { to: '/employer/offers', label: 'Предложения' },
       ]}
     />
   );
