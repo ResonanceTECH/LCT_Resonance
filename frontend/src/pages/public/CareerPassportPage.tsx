@@ -6,7 +6,12 @@ import { SkillRadar } from '@/entities/ui/SkillRadar';
 import { FSPVerificationBadge } from '@/entities/ui/FSPVerificationBadge';
 import { publicApi } from '@/shared/api/endpoints';
 import { getErrorMessage } from '@/shared/api/errors';
-import { ErrorState, Loader } from '@/shared/ui';
+import {
+  formatReadiness,
+  formatSpecialization,
+} from '@/shared/lib/formatters';
+import { Badge, ErrorState, Loader } from '@/shared/ui';
+import styles from './CareerPassportPage.module.css';
 
 /** Scannable QR code of the passport link. */
 export function QrCode({ value, size = 140 }: { value: string; size?: number }) {
@@ -33,7 +38,7 @@ export function CareerPassportPage() {
     retry: false,
   });
 
-  if (query.isLoading) return <Loader label="Загружаем Career Passport..." />;
+  if (query.isLoading) return <Loader label="Загружаем карьерный паспорт..." />;
   if (query.isError || !query.data) {
     return (
       <div className="page">
@@ -47,27 +52,49 @@ export function CareerPassportPage() {
   }
 
   const { profile, achievements, radar, publicUrl } = query.data;
+  const role =
+    profile.desiredPosition ?? formatSpecialization(profile.specialization);
 
   return (
-    <div className="landing">
-      <header className="topbar">
-        <div className="brand">FSP Talent · Career Passport</div>
-        <FSPVerificationBadge label="Public profile" />
+    <div className={styles.shell}>
+      <header className={styles.topbar}>
+        <div className={styles.brand}>ФСП Talent · Карьерный паспорт</div>
+        <FSPVerificationBadge label="Публичный профиль" />
       </header>
-      <main className="page stack">
-        <div className="page-header">
-          <div>
-            <h1>{profile.fullName}</h1>
-            <p>Публичный паспорт кандидата. Контакты скрыты.</p>
-          </div>
-          <div className="section-card" style={{ textAlign: 'center' }}>
-            <QrCode value={publicUrl} />
-            <p className="muted" style={{ marginBottom: 0, fontSize: '0.85rem', wordBreak: 'break-all' }}>
-              {publicUrl}
+
+      <main className={styles.main}>
+        <section className={styles.hero} aria-labelledby="passport-heading">
+          <div className={styles.heroInfo}>
+            <div className={styles.heroTop}>
+              <h1 id="passport-heading" className={styles.heroTitle}>
+                {profile.fullName}
+              </h1>
+              <Badge tone="accent">{formatReadiness(profile.readiness)}</Badge>
+            </div>
+            <p className={styles.heroMeta}>
+              {role}
+              {profile.city ? ` · ${profile.city}` : ''}
+            </p>
+            {profile.about ? <p className={styles.heroAbout}>{profile.about}</p> : null}
+            <p className={styles.heroNote}>
+              Публичный карьерный паспорт. Навыки, тесты и достижения ФСП — без контактов до
+              согласия кандидата.
             </p>
           </div>
-        </div>
-        <CandidateProfileView mode="employer" profile={profile} achievements={achievements} />
+
+          <aside className={styles.heroQr}>
+            <p className={styles.qrLabel}>QR-код профиля</p>
+            <QrCode value={publicUrl} size={132} />
+            <p className={styles.qrLink}>{publicUrl}</p>
+          </aside>
+        </section>
+
+        <CandidateProfileView
+          mode="employer"
+          profile={profile}
+          achievements={achievements}
+          hideIntro
+        />
         <SkillRadar radar={radar} />
       </main>
     </div>

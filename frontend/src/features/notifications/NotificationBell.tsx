@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Notification03Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { notificationsApi } from '@/shared/api/endpoints';
@@ -46,18 +48,52 @@ export function NotificationBell() {
     <div ref={rootRef} style={{ position: 'relative' }}>
       <Button
         type="button"
-        variant="secondary"
+        variant="ghost"
         aria-label={`Уведомления${unread ? `, непрочитанных: ${unread}` : ''}`}
         aria-expanded={open}
         data-testid="notification-bell"
         onClick={() => setOpen((v) => !v)}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 6,
+          minWidth: 0,
+          background: 'transparent',
+          border: 'none',
+          boxShadow: 'none',
+          color: 'var(--brand-primary)',
+        }}
       >
-        Увед.
-        {unread > 0 ? (
-          <Badge tone="danger">
-            <span data-testid="notification-unread">{unread}</span>
-          </Badge>
-        ) : null}
+        <span style={{ position: 'relative', display: 'inline-flex', width: 22, height: 22 }}>
+          <HugeiconsIcon icon={Notification03Icon} size={22} strokeWidth={1.75} color="currentColor" />
+          {unread > 0 ? (
+            <span
+              data-testid="notification-unread"
+              style={{
+                position: 'absolute',
+                top: -5,
+                right: -6,
+                minWidth: 16,
+                height: 16,
+                padding: '0 4px',
+                borderRadius: 999,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'var(--error-main)',
+                color: '#fff',
+                fontSize: 10,
+                fontWeight: 700,
+                lineHeight: 1,
+                border: '1.5px solid var(--background-card, #fff)',
+                boxSizing: 'border-box',
+              }}
+            >
+              {unread > 99 ? '99+' : unread}
+            </span>
+          ) : null}
+        </span>
       </Button>
       {open ? (
         <div
@@ -107,7 +143,7 @@ export function NotificationBell() {
                   >
                     <div className="row" style={{ justifyContent: 'space-between' }}>
                       <strong style={{ fontSize: '0.95rem' }}>{n.title}</strong>
-                      {!n.read ? <Badge tone="accent">new</Badge> : null}
+                      {!n.read ? <Badge tone="accent">новое</Badge> : null}
                     </div>
                     <p style={{ margin: '0.2rem 0 0', fontSize: '0.85rem' }}>{n.body}</p>
                     <span className="muted" style={{ fontSize: '0.75rem' }}>

@@ -17,17 +17,18 @@ describe('CareerPassportPage', () => {
   it('loads public passport without auth and shows QR + radar', async () => {
     renderPassport('/p/passport-cand-1');
 
-    expect((await screen.findAllByText('Анна Ковалёва')).length).toBeGreaterThan(0);
+    expect(await screen.findByRole('heading', { name: 'Анна Ковалёва' })).toBeInTheDocument();
     expect(screen.getByTestId('passport-qr')).toBeInTheDocument();
     expect(screen.getByTestId('passport-qr').getAttribute('data-url')).toMatch(/\/p\/passport-cand-1$/);
     expect(screen.getByTestId('skill-radar')).toBeInTheDocument();
-    expect(screen.getByText(/Публичный паспорт кандидата/)).toBeInTheDocument();
+    expect(screen.getByText(/Публичный карьерный паспорт/)).toBeInTheDocument();
+    expect(screen.getByText(/Инженер фронтенда/)).toBeInTheDocument();
   });
 
   it('opens by the token even when the name part is outdated', async () => {
     renderPassport('/p/old-name-cand-1');
 
-    expect((await screen.findAllByText('Анна Ковалёва')).length).toBeGreaterThan(0);
+    expect(await screen.findByRole('heading', { name: 'Анна Ковалёва' })).toBeInTheDocument();
   });
 
   it('shows error for unknown slug', async () => {

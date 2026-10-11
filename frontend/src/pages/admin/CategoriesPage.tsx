@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { adminApi } from '@/shared/api/endpoints';
 import { getErrorMessage } from '@/shared/api/errors';
-import { formatGrade } from '@/shared/lib/formatters';
+import { formatGrade, formatSpecialization } from '@/shared/lib/formatters';
 import { Badge, ErrorState, Loader, Tabs } from '@/shared/ui';
 
 type Tab = 'categories' | 'specializations' | 'grades' | 'skills' | 'industries';
@@ -34,8 +34,7 @@ export function AdminCategoriesPage() {
         <div>
           <h1>Категории и справочники</h1>
           <p>
-            Профессиональные категории и таксономия. В MVP — просмотр; правка — когда Backend
-            закроет целостность данных.
+            Профессиональные категории и таксономия. В MVP — просмотр; правка появится позже.
           </p>
         </div>
         <Badge tone="accent">Подтверждено профилей: {confirmedTotal}</Badge>
@@ -68,7 +67,7 @@ export function AdminCategoriesPage() {
                 <tr key={cat.id}>
                   <td>
                     <strong>
-                      {cat.specialization} / {formatGrade(cat.grade)}
+                      {formatSpecialization(cat.specialization)} / {formatGrade(cat.grade)}
                     </strong>
                   </td>
                   <td>{formatGrade(cat.grade)}</td>

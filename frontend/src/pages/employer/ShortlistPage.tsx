@@ -20,7 +20,7 @@ export function EmployerShortlistPage() {
   if (query.isError) {
     return (
       <ErrorState
-        title="Не удалось загрузить shortlist"
+        title="Не удалось загрузить избранное"
         description={getErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
@@ -33,12 +33,12 @@ export function EmployerShortlistPage() {
     <div>
       <div className="page-header">
         <div>
-          <h1>Shortlist</h1>
+          <h1>Избранное</h1>
           <p>Сохранённые кандидаты.</p>
         </div>
       </div>
       {items.length === 0 ? (
-        <EmptyState title="Shortlist пуст" />
+        <EmptyState title="В избранном пока никого нет" />
       ) : (
         <div className="stack">
           {items.map((candidate) => (

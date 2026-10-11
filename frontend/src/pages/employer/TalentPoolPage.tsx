@@ -5,6 +5,7 @@ import { CandidateCard } from '@/entities/ui/CandidateCard';
 import type { TalentPoolFilters } from '@/entities/types';
 import { candidateApi, vacancyApi } from '@/shared/api/endpoints';
 import { getErrorMessage } from '@/shared/api/errors';
+import { formatSpecialization } from '@/shared/lib/formatters';
 import {
   GRADE_OPTIONS,
   READINESS_OPTIONS,
@@ -85,8 +86,8 @@ export function EmployerTalentPoolPage() {
     <div>
       <div className="page-header">
         <div>
-          <h1>Talent Pool</h1>
-          <p>Фильтры уходят на Backend. Match Score — только при выбранной вакансии.</p>
+          <h1>Пул кандидатов</h1>
+          <p>Фильтры применяются на сервере. Оценка соответствия — только при выбранной вакансии.</p>
         </div>
         <Link
           to={
@@ -112,9 +113,9 @@ export function EmployerTalentPoolPage() {
           onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
         />
         <Select
-          label="Вакансия для Match"
+          label="Вакансия для оценки"
           allowEmpty
-          emptyLabel="Без Match Score"
+          emptyLabel="Без оценки соответствия"
           options={vacancyOptions}
           value={filters.vacancyId ?? ''}
           onChange={(e) => setFilters((f) => ({ ...f, vacancyId: e.target.value }))}
@@ -124,7 +125,7 @@ export function EmployerTalentPoolPage() {
           allowEmpty
           emptyLabel="По умолчанию"
           options={[
-            { value: 'match', label: 'Match Score' },
+            { value: 'match', label: 'Оценка соответствия' },
             { value: 'name', label: 'Имя' },
             { value: 'grade', label: 'Грейд' },
             { value: 'salary', label: 'Зарплата' },
@@ -137,7 +138,10 @@ export function EmployerTalentPoolPage() {
         <Select
           label="Специализация"
           allowEmpty
-          options={SPECIALIZATION_OPTIONS.map((s) => ({ value: s, label: s }))}
+          options={SPECIALIZATION_OPTIONS.map((s) => ({
+            value: s,
+            label: formatSpecialization(s),
+          }))}
           value={filters.specialization ?? ''}
           onChange={(e) => setFilters((f) => ({ ...f, specialization: e.target.value }))}
         />
@@ -150,11 +154,6 @@ export function EmployerTalentPoolPage() {
             setFilters((f) => ({ ...f, grade: e.target.value as TalentPoolFilters['grade'] }))
           }
         />
-        <Input
-          label="Стек"
-          value={filters.skills ?? ''}
-          onChange={(e) => setFilters((f) => ({ ...f, skills: e.target.value }))}
-        />
         <Select
           label="Формат"
           allowEmpty
@@ -164,6 +163,39 @@ export function EmployerTalentPoolPage() {
             setFilters((f) => ({
               ...f,
               workFormat: e.target.value as TalentPoolFilters['workFormat'],
+            }))
+          }
+        />
+        <Select
+          label="Готовность"
+          allowEmpty
+          options={READINESS_OPTIONS}
+          value={filters.readiness ?? ''}
+          onChange={(e) =>
+            setFilters((f) => ({
+              ...f,
+              readiness: e.target.value as TalentPoolFilters['readiness'],
+            }))
+          }
+        />
+        <Select
+          label="Есть ФСП"
+          allowEmpty
+          options={[
+            { value: 'true', label: 'Да' },
+            { value: 'false', label: 'Нет' },
+          ]}
+          value={
+            filters.hasFspAchievements === true
+              ? 'true'
+              : filters.hasFspAchievements === false
+                ? 'false'
+                : ''
+          }
+          onChange={(e) =>
+            setFilters((f) => ({
+              ...f,
+              hasFspAchievements: e.target.value === '' ? '' : e.target.value === 'true',
             }))
           }
         />
@@ -190,42 +222,14 @@ export function EmployerTalentPoolPage() {
           }
         />
         <Input
+          label="Стек"
+          value={filters.skills ?? ''}
+          onChange={(e) => setFilters((f) => ({ ...f, skills: e.target.value }))}
+        />
+        <Input
           label="Дисциплина ФСП"
           value={filters.fspDiscipline ?? ''}
           onChange={(e) => setFilters((f) => ({ ...f, fspDiscipline: e.target.value }))}
-        />
-        <Select
-          label="Есть ФСП"
-          allowEmpty
-          options={[
-            { value: 'true', label: 'Да' },
-            { value: 'false', label: 'Нет' },
-          ]}
-          value={
-            filters.hasFspAchievements === true
-              ? 'true'
-              : filters.hasFspAchievements === false
-                ? 'false'
-                : ''
-          }
-          onChange={(e) =>
-            setFilters((f) => ({
-              ...f,
-              hasFspAchievements: e.target.value === '' ? '' : e.target.value === 'true',
-            }))
-          }
-        />
-        <Select
-          label="Готовность"
-          allowEmpty
-          options={READINESS_OPTIONS}
-          value={filters.readiness ?? ''}
-          onChange={(e) =>
-            setFilters((f) => ({
-              ...f,
-              readiness: e.target.value as TalentPoolFilters['readiness'],
-            }))
-          }
         />
       </div>
 

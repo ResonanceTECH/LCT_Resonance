@@ -9,7 +9,7 @@ import { EmployerTalentPoolPage } from '@/pages/employer/TalentPoolPage';
 import { renderWithProviders } from '@/test/test-utils';
 
 describe('EmployerTalentPoolPage', () => {
-  it('lists candidates and shows Match Score when vacancy selected', async () => {
+  it('lists candidates and shows match score when vacancy selected', async () => {
     const login = await authApi.login({
       email: 'employer@demo.ru',
       password: DEMO_PASSWORD,
@@ -27,10 +27,10 @@ describe('EmployerTalentPoolPage', () => {
     expect(await screen.findByText('Анна Ковалёва')).toBeInTheDocument();
     expect(screen.getByText('Максим Орлов')).toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText('Вакансия для Match'), 'vac-1');
+    await user.selectOptions(screen.getByLabelText('Вакансия для оценки'), 'vac-1');
 
     await waitFor(() => {
-      expect(screen.getAllByText(/Match \d+%/).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Соответствие \d+%/).length).toBeGreaterThan(0);
     });
   });
 

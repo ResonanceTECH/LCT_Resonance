@@ -20,7 +20,7 @@ export function CandidateDashboardPage() {
   if (query.isError) {
     return (
       <ErrorState
-        title="Не удалось загрузить dashboard"
+        title="Не удалось загрузить обзор"
         description={getErrorMessage(query.error)}
         onRetry={() => void query.refetch()}
       />
@@ -37,16 +37,9 @@ export function CandidateDashboardPage() {
           <h1>Кабинет кандидата</h1>
           <p>Сводка по профилю, предложениям и заполненности.</p>
         </div>
-        <div className="row">
-          <Link to="/candidate/notifications">
-            <Button type="button" variant="secondary">
-              Уведомления{data.unreadNotifications ? ` (${data.unreadNotifications})` : ''}
-            </Button>
-          </Link>
-          <Link to="/candidate/profile/edit">
-            <Button type="button">Редактировать профиль</Button>
-          </Link>
-        </div>
+        <Link to="/candidate/profile/edit">
+          <Button type="button">Редактировать профиль</Button>
+        </Link>
       </div>
 
       <div className="stats">

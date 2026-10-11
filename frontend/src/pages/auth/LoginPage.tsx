@@ -30,8 +30,8 @@ export function LoginPage() {
   return (
     <div className="auth-page">
       <AuthVisual
-        title="Найм IT-специалистов с подтверждёнными компетенциями"
-        description="Платформа обратного рекрутинга: Talent Pool, Match Score и достижения ФСП в одном кабинете для кандидатов и работодателей."
+        title="Найм, где навык уже доказан"
+        description="Резюме можно написать красиво. ФСП и тесты — нет. Оффер с вилкой до созвона, контакты — только если сам ок."
       />
       <div className="auth-panel">
         <div className="auth-card">

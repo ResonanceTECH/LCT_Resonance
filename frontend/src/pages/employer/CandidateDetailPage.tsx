@@ -100,7 +100,7 @@ export function EmployerCandidateDetailPage() {
       <div className="page-header">
         <div>
           <h1>{profile.fullName}</h1>
-          <p>Просмотр работодателем. Контакты только через Backend API.</p>
+          <p>Просмотр работодателем. Контакты открываются только после согласия кандидата.</p>
         </div>
         <div className="row">
           <Link to="/employer/talent-pool">
@@ -115,7 +115,7 @@ export function EmployerCandidateDetailPage() {
               onClick={() => removeShortlist.mutate()}
               disabled={removeShortlist.isPending}
             >
-              Убрать из shortlist
+              Убрать из избранного
             </Button>
           ) : (
             <Button
@@ -124,7 +124,7 @@ export function EmployerCandidateDetailPage() {
               onClick={() => addShortlist.mutate()}
               disabled={addShortlist.isPending}
             >
-              В shortlist
+              В избранное
             </Button>
           )}
           <Button type="button" onClick={() => setOfferOpen(true)}>

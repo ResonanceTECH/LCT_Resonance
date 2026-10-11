@@ -23,7 +23,7 @@ export function EmployerDashboardPage() {
   if (summaryQuery.isError) {
     return (
       <ErrorState
-        title="Не удалось загрузить dashboard"
+        title="Не удалось загрузить обзор"
         description={getErrorMessage(summaryQuery.error)}
         onRetry={() => void summaryQuery.refetch()}
       />
@@ -38,10 +38,10 @@ export function EmployerDashboardPage() {
       <div className="page-header">
         <div>
           <h1>Кабинет работодателя</h1>
-          <p>Сводка и расширенная аналитика с Backend.</p>
+          <p>Сводка и расширенная аналитика с сервера.</p>
         </div>
         <Link to="/employer/talent-pool">
-          <Button type="button">Открыть Talent Pool</Button>
+          <Button type="button">Открыть пул кандидатов</Button>
         </Link>
       </div>
 
@@ -51,7 +51,7 @@ export function EmployerDashboardPage() {
           <strong>{data.candidatesFound}</strong>
         </div>
         <div className="stat">
-          <span className="muted">Shortlist</span>
+          <span className="muted">Избранное</span>
           <strong>{data.shortlistSize}</strong>
         </div>
         <div className="stat">
@@ -76,7 +76,7 @@ export function EmployerDashboardPage() {
         <section className="section-card stack" data-testid="employer-analytics">
           <h2 style={{ margin: 0 }}>Расширенная аналитика</h2>
           <p className="muted" style={{ margin: 0 }}>
-            Метрики считаются на Backend. Frontend только отображает.
+            Метрики считаются на сервере — здесь только отображение.
           </p>
 
           <div>
@@ -87,15 +87,15 @@ export function EmployerDashboardPage() {
                 <strong>{analytics.funnel.viewedCandidates}</strong>
               </div>
               <div className="stat">
-                <span className="muted">Shortlist</span>
+                <span className="muted">Избранное</span>
                 <strong>{analytics.funnel.shortlisted}</strong>
               </div>
               <div className="stat">
-                <span className="muted">Офферы</span>
+                <span className="muted">Предложения</span>
                 <strong>{analytics.funnel.offersSent}</strong>
               </div>
               <div className="stat">
-                <span className="muted">Accept / Decline</span>
+                <span className="muted">Принято / Отклонено</span>
                 <strong>
                   {analytics.funnel.offersAccepted}/{analytics.funnel.offersDeclined}
                 </strong>
@@ -105,17 +105,17 @@ export function EmployerDashboardPage() {
 
           <div className="grid-2">
             <div className="stat">
-              <span className="muted">Конверсия в shortlist</span>
+              <span className="muted">Конверсия в избранное</span>
               <strong>{pct(analytics.conversion.shortlistRate)}</strong>
             </div>
             <div className="stat">
-              <span className="muted">Accept rate офферов</span>
+              <span className="muted">Доля принятых предложений</span>
               <strong>{pct(analytics.conversion.offerAcceptRate)}</strong>
             </div>
           </div>
 
           <div className="stat">
-            <span className="muted">Средний Match Score (активная вакансия)</span>
+            <span className="muted">Средняя оценка соответствия (активная вакансия)</span>
             <strong data-testid="avg-match">
               {analytics.avgMatchScore == null ? '—' : `${analytics.avgMatchScore}%`}
             </strong>

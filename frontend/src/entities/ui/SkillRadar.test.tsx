@@ -21,12 +21,12 @@ describe('SkillRadar', () => {
     expect(screen.getByText(/React \(88\)/)).toBeInTheDocument();
     expect(screen.getByText(/TypeScript \(91\)/)).toBeInTheDocument();
     expect(
-      screen.getByText(/Оценки рассчитаны на Backend\/ML/),
+      screen.getByText(/Оценки рассчитаны на сервере/),
     ).toBeInTheDocument();
   });
 
   it('shows empty state when axes are missing', () => {
     render(<SkillRadar radar={{ candidateId: 'cand-1', axes: [] }} />);
-    expect(screen.getByText(/Нет данных для Skill Radar/)).toBeInTheDocument();
+    expect(screen.getByText(/Нет данных для радара навыков/)).toBeInTheDocument();
   });
 });

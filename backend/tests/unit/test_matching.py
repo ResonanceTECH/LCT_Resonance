@@ -174,6 +174,9 @@ def test_reason_labels_follow_backend_dictionary():
         MatcherReason(code="WORK_FORMAT_MISMATCH", params={"workFormat": "office"}, positive=False)
     )
     assert (mismatch.label, mismatch.positive) == ("формат кандидата: офис", False)
+    assert render_reason(
+        MatcherReason(code="SKILLS_OPTIONAL", params={"matched": 1, "total": 2})
+    ).label == ("указаны 1 из 2 желательных навыков")
     # An ML model may send an unknown code or forget parameters: no crash, code as label.
     assert render_reason(MatcherReason(code="ML_CUSTOM")).label == "ML_CUSTOM"
     assert render_reason(MatcherReason(code="TEST_SCORE")).label == "TEST_SCORE"

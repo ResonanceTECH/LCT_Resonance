@@ -4,7 +4,7 @@ import { MatchReasonList } from './MatchReason';
 export function MatchScore({ match }: { match: CandidateMatch }) {
   return (
     <div className="match-box">
-      <div className="match-score">Match {match.score}%</div>
+      <div className="match-score">Соответствие {match.score}%</div>
       <h3 style={{ marginTop: '0.5rem' }}>Почему подходит:</h3>
       <MatchReasonList reasons={match.reasons} />
       {match.missingInProfileSkills.length > 0 ? (

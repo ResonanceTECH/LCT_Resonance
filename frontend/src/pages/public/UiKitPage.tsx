@@ -1,5 +1,16 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  AlertCircle,
+  Bell,
+  CheckCircle2,
+  Info,
+  LayoutDashboard,
+  Search,
+  Users,
+  Briefcase,
+  AlertTriangle,
+} from 'lucide-react';
 import { CandidateCard } from '@/entities/ui/CandidateCard';
 import { CandidateProfileView } from '@/entities/ui/CandidateProfile';
 import { FSPAchievementCard } from '@/entities/ui/FSPAchievementCard';
@@ -34,8 +45,10 @@ import {
   Loader,
   Modal,
   ProgressBar,
+  Radio,
   Select,
   Skeleton,
+  Switch,
   Tabs,
   Textarea,
 } from '@/shared/ui';
@@ -47,7 +60,9 @@ const NAV = [
   { id: 'buttons', label: 'Buttons' },
   { id: 'forms', label: 'Forms' },
   { id: 'feedback', label: 'Feedback' },
-  { id: 'badges', label: 'Badges' },
+  { id: 'badges', label: 'Badges & chips' },
+  { id: 'layout', label: 'Layout' },
+  { id: 'tables', label: 'Tables' },
   { id: 'domain', label: 'Domain' },
   { id: 'match', label: 'Match & Radar' },
   { id: 'testing', label: 'Testing' },
@@ -56,19 +71,68 @@ const NAV = [
   { id: 'rules', label: 'Rules' },
 ] as const;
 
-const COLORS = [
+const BRAND_COLORS = [
   { name: 'brand-primary', value: '#402FFF', varName: '--brand-primary' },
   { name: 'brand-red', value: '#EC1D35', varName: '--brand-red' },
+  { name: 'brand-light-gray', value: '#EDEDED', varName: '--brand-light-gray' },
+  { name: 'brand-gray', value: '#C8C9CA', varName: '--brand-gray' },
+  { name: 'brand-dark', value: '#1B1C21', varName: '--brand-dark' },
+] as const;
+
+const PRIMARY_SCALE = [
+  { name: 'primary-50', value: '#F2F0FF', varName: '--primary-50' },
+  { name: 'primary-100', value: '#E6E1FF', varName: '--primary-100' },
+  { name: 'primary-200', value: '#CEC5FF', varName: '--primary-200' },
+  { name: 'primary-300', value: '#AB9EFF', varName: '--primary-300' },
+  { name: 'primary-400', value: '#796AFF', varName: '--primary-400' },
+  { name: 'primary-500', value: '#402FFF', varName: '--primary-500' },
+  { name: 'primary-600', value: '#3324E6', varName: '--primary-600' },
+  { name: 'primary-700', value: '#271BB8', varName: '--primary-700' },
+  { name: 'primary-800', value: '#1D168C', varName: '--primary-800' },
+  { name: 'primary-900', value: '#15105E', varName: '--primary-900' },
+] as const;
+
+const SURFACE_COLORS = [
   { name: 'background-page', value: '#F7F7FA', varName: '--background-page' },
   { name: 'background-card', value: '#FFFFFF', varName: '--background-card' },
+  { name: 'background-secondary', value: '#F1F1F5', varName: '--background-secondary' },
+  { name: 'background-hover', value: '#F0EEFF', varName: '--background-hover' },
+  { name: 'background-selected', value: '#EAE6FF', varName: '--background-selected' },
   { name: 'text-primary', value: '#1B1C21', varName: '--text-primary' },
   { name: 'text-secondary', value: '#565966', varName: '--text-secondary' },
-  { name: 'primary-50', value: '#F2F0FF', varName: '--primary-50' },
-  { name: 'primary-600', value: '#3324E6', varName: '--primary-600' },
+  { name: 'text-tertiary', value: '#858895', varName: '--text-tertiary' },
+  { name: 'border-default', value: '#E2E3E9', varName: '--border-default' },
+  { name: 'border-subtle', value: '#ECECF1', varName: '--border-subtle' },
+  { name: 'border-hover', value: '#B9B0FF', varName: '--border-hover' },
+  { name: 'border-focus', value: '#402FFF', varName: '--border-focus' },
+] as const;
+
+const SEMANTIC_COLORS = [
   { name: 'success-main', value: '#16834A', varName: '--success-main' },
   { name: 'warning-main', value: '#A9650C', varName: '--warning-main' },
   { name: 'error-main', value: '#D8273C', varName: '--error-main' },
   { name: 'info-main', value: '#2764C5', varName: '--info-main' },
+] as const;
+
+const SPACES = [
+  { token: 'space-1', px: 4 },
+  { token: 'space-2', px: 8 },
+  { token: 'space-3', px: 12 },
+  { token: 'space-4', px: 16 },
+  { token: 'space-5', px: 20 },
+  { token: 'space-6', px: 24 },
+  { token: 'space-8', px: 32 },
+  { token: 'space-10', px: 40 },
+  { token: 'space-12', px: 48 },
+  { token: 'space-16', px: 64 },
+] as const;
+
+const RADII = [
+  { token: 'radius-icon / badge', value: '8px', css: '8px' },
+  { token: 'radius-control', value: '12px', css: '12px' },
+  { token: 'radius-card', value: '16px', css: '16px' },
+  { token: 'radius-hero / modal', value: '20px', css: '20px' },
+  { token: 'radius-pill', value: '999px', css: '999px' },
 ] as const;
 
 function Section({
@@ -102,10 +166,33 @@ function Canvas({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+function SwatchGrid({
+  items,
+}: {
+  items: readonly { name: string; value: string; varName: string }[];
+}) {
+  return (
+    <div className={styles.swatches}>
+      {items.map((c) => (
+        <div key={c.name} className={styles.swatch}>
+          <div className={styles.swatchChip} style={{ background: c.value }} />
+          <div className={styles.swatchMeta}>
+            <span className={styles.swatchName}>{c.name}</span>
+            <span className={styles.swatchValue}>{c.varName}</span>
+            <span className={styles.swatchValue}>{c.value}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function UiKitPage() {
   const [tab, setTab] = useState('overview');
   const [modalOpen, setModalOpen] = useState(false);
   const [checked, setChecked] = useState(true);
+  const [switchOn, setSwitchOn] = useState(true);
+  const [radioVal, setRadioVal] = useState('remote');
   const [activeNav, setActiveNav] = useState<string>('foundations');
   const [selectedOption, setSelectedOption] = useState<string | undefined>('a');
 
@@ -143,38 +230,47 @@ export function UiKitPage() {
     <div className={styles.page} data-testid="ui-kit-page">
       <header className={styles.topbar}>
         <div className={styles.brandBlock}>
-          <div className={styles.brand}>FSP Talent · UI Kit</div>
-          <p className={styles.brandMeta}>Living style guide · tokens · shared · domain</p>
+          <img className={styles.brandLogo} src="/fsp-logo.svg" alt="ФСП" />
+          <div className={styles.brandText}>
+            <div className={styles.brand}>FSP Talent · UI Kit</div>
+            <p className={styles.brandMeta}>Design system v1.0 · Minimal Tech / Bento</p>
+          </div>
         </div>
         <div className={styles.topActions}>
-          <Link to="/" className={styles.topLinkGhost}>
-            На лендинг
+          <Link to="/">
+            <Button type="button" variant="ghost" size="sm">
+              На лендинг
+            </Button>
           </Link>
-          <Link to="/login" className={styles.topLinkSecondary}>
-            Demo-вход
+          <Link to="/login">
+            <Button type="button" variant="secondary" size="sm">
+              Demo-вход
+            </Button>
           </Link>
         </div>
       </header>
 
       <div className={styles.shell}>
         <div className={styles.hero}>
-          <p className={styles.heroEyebrow}>Design system</p>
+          <p className={styles.heroEyebrow}>FSP Brandbook · JetBrains Mono · Golos Text</p>
           <h1 className={styles.heroTitle}>
-            Всё для
+            Дизайн-система
             <br />
-            дальнейшей разработки
+            FSP Talent
           </h1>
           <p className={styles.heroLead}>
-            Визуальный каталог токенов, shared UI и domain-компонентов. Копируй паттерны, не выдумывай
-            вторую палитру. Backend owns truth.
+            Единые токены, shared UI и domain-компоненты для кабинетов кандидата, работодателя и
+            администратора. Фирменный фиолетовый #402FFF, без второй палитры.
           </p>
           <div className={styles.heroStats}>
             <div className={styles.stat}>
-              <span className={styles.statValue}>{COLORS.length}</span>
+              <span className={styles.statValue}>
+                {BRAND_COLORS.length + PRIMARY_SCALE.length + SURFACE_COLORS.length + SEMANTIC_COLORS.length}
+              </span>
               <span className={styles.statLabel}>color tokens</span>
             </div>
             <div className={styles.stat}>
-              <span className={styles.statValue}>14</span>
+              <span className={styles.statValue}>16</span>
               <span className={styles.statLabel}>shared UI</span>
             </div>
             <div className={styles.stat}>
@@ -182,8 +278,8 @@ export function UiKitPage() {
               <span className={styles.statLabel}>domain UI</span>
             </div>
             <div className={styles.stat}>
-              <span className={styles.statValue}>6</span>
-              <span className={styles.statLabel}>view states</span>
+              <span className={styles.statValue}>4px</span>
+              <span className={styles.statLabel}>grid step</span>
             </div>
           </div>
         </div>
@@ -214,121 +310,163 @@ export function UiKitPage() {
             ))}
           </nav>
 
-          <Section id="foundations" title="Foundations" hint="Токены из src/styles/global.css">
-            <Canvas label="Color tokens">
-              <div className={styles.swatches}>
-                {COLORS.map((c) => (
-                  <div key={c.name} className={styles.swatch}>
-                    <div className={styles.swatchChip} style={{ background: c.value }} />
-                    <div className={styles.swatchMeta}>
-                      <span className={styles.swatchName}>{c.name}</span>
-                      <span className={styles.swatchValue}>{c.varName}</span>
-                      <span className={styles.swatchValue}>{c.value}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <Section id="foundations" title="Foundations" hint="src/styles/global.css · только CSS variables">
+            <Canvas label="Brand · ФСП brandbook">
+              <SwatchGrid items={BRAND_COLORS} />
             </Canvas>
-            <div className={styles.grid3} style={{ marginTop: '1rem' }}>
-              <Canvas label="Radius">
-                <div className={styles.row}>
-                  <div
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 'var(--radius-sm)',
-                      background: 'var(--accent-soft)',
-                    }}
-                  />
-                  <div
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 'var(--radius)',
-                      background: 'var(--accent-soft)',
-                    }}
-                  />
-                  <div
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 999,
-                      background: 'var(--accent)',
-                    }}
-                  />
+            <div className={styles.gap} />
+            <Canvas label="Primary scale">
+              <SwatchGrid items={PRIMARY_SCALE} />
+            </Canvas>
+            <div className={styles.gap} />
+            <Canvas label="Surfaces · text · borders">
+              <SwatchGrid items={SURFACE_COLORS} />
+            </Canvas>
+            <div className={styles.gap} />
+            <Canvas label="Semantic">
+              <SwatchGrid items={SEMANTIC_COLORS} />
+            </Canvas>
+            <div className={styles.gap} />
+            <div className={styles.grid2}>
+              <Canvas label="Spacing · 4px grid">
+                <div className={styles.spaceRow}>
+                  {SPACES.map((s) => (
+                    <div key={s.token} className={styles.spaceBox}>
+                      <div className={styles.spaceChip} style={{ width: s.px, height: s.px }} />
+                      <span className={styles.typeMeta}>
+                        {s.token}
+                        <br />
+                        {s.px}px
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <p className={styles.typeMeta}>--radius-sm · --radius · pill 999</p>
               </Canvas>
-              <Canvas label="Shadow">
-                <div
-                  style={{
-                    height: 72,
-                    borderRadius: 'var(--radius)',
-                    background: '#fff',
-                    boxShadow: 'var(--shadow)',
-                  }}
-                />
-                <p className={styles.typeMeta}>--shadow</p>
-              </Canvas>
-              <Canvas label="Import">
-                <pre className={styles.importBox}>{`import { Button, Input, Badge } from '@/shared/ui';
-import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
+              <Canvas label="Radius">
+                <div className={styles.radiusDemo}>
+                  {RADII.map((r) => (
+                    <div key={r.token} className={styles.radiusItem}>
+                      <div className={styles.radiusBox} style={{ borderRadius: r.css }} />
+                      <span className={styles.typeMeta}>
+                        {r.value}
+                        <br />
+                        {r.token}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </Canvas>
             </div>
+            <div className={styles.gap} />
+            <Canvas label="Shadows">
+              <div className={styles.shadowDemo}>
+                <div className={styles.shadowCard} style={{ boxShadow: 'var(--shadow-card)' }}>
+                  --shadow-card
+                </div>
+                <div className={styles.shadowCard} style={{ boxShadow: 'var(--shadow-card-hover)' }}>
+                  --shadow-card-hover
+                </div>
+                <div className={styles.shadowCard} style={{ boxShadow: 'var(--shadow-dropdown)' }}>
+                  --shadow-dropdown
+                </div>
+              </div>
+            </Canvas>
+            <div className={styles.gap} />
+            <Canvas label="Import">
+              <pre className={styles.importBox}>{`import { Button, Input, Badge, Switch } from '@/shared/ui';
+import { MatchScore } from '@/entities/ui/MatchScore';
+/* tokens: var(--brand-primary) — never hardcode HEX */`}</pre>
+            </Canvas>
           </Section>
 
-          <Section id="typography" title="Typography" hint="JetBrains Mono (H1–H3, KPI) · Golos Text (UI body)">
+          <Section id="typography" title="Typography" hint="JetBrains Mono · H1–H3 / KPI · Golos Text · UI body">
             <Canvas label="Type scale">
               <div className={styles.typeSample}>
-                <p className={styles.displaySample}>JetBrains Mono — display</p>
-                <p className={styles.typeMeta}>h1–h3 · KPI · brand · landing hero</p>
+                <div className={styles.typeRow}>
+                  <p className={styles.typeOverline}>Overline · 11 / 600</p>
+                  <p className={styles.typeH1}>H1 · 32 / 700</p>
+                  <p className={styles.typeMeta}>JetBrains Mono · line-height 40</p>
+                </div>
               </div>
               <div className={styles.typeSample}>
-                <p className={styles.bodySample}>Golos Text — body UI. Кандидат с ФСП. Match Score. Контакты после accept.</p>
-                <p className={styles.typeMeta}>14px / 22 · controls · labels · descriptions</p>
+                <p className={styles.typeH2}>H2 · 26 / 700</p>
+                <p className={styles.typeH3}>H3 · 22 / 600</p>
+                <p className={styles.typeH4}>H4 · 18 / 600</p>
               </div>
               <div className={styles.typeSample}>
-                <p className={styles.mutedSample}>muted — вторичный текст, подсказки, метаданные</p>
-                <p className={styles.typeMeta}>color: var(--text-secondary)</p>
+                <p className={styles.typeBodyLg}>Body Large · 16 / 400 — описания и лиды.</p>
+                <p className={styles.typeBody}>Body · 14 / 400 — основной UI-текст, формы, таблицы.</p>
+                <p className={styles.typeSmall}>Body Small · 13 / 400 — вторичные описания.</p>
+                <p className={styles.typeCaption}>Caption · 12 / 400 — мета, ошибки, бейджи.</p>
+              </div>
+              <div className={styles.typeSample}>
+                <p className={styles.typeKpi}>87%</p>
+                <p className={styles.typeMeta}>KPI · tabular-nums · JetBrains Mono</p>
               </div>
             </Canvas>
           </Section>
 
-          <Section id="buttons" title="Buttons" hint="shared/ui/Button · variants">
+          <Section id="buttons" title="Buttons" hint="shared/ui/Button · primary / secondary / outline / ghost / danger">
             <Canvas label="Variants">
               <div className={styles.row}>
                 <Button type="button">Primary</Button>
                 <Button type="button" variant="secondary">
                   Secondary
                 </Button>
+                <Button type="button" variant="outline">
+                  Outline
+                </Button>
                 <Button type="button" variant="ghost">
                   Ghost
                 </Button>
                 <Button type="button" variant="danger">
-                  Danger
+                  Destructive
                 </Button>
               </div>
             </Canvas>
-            <div style={{ height: '0.85rem' }} />
-            <Canvas label="States">
+            <div className={styles.gap} />
+            <Canvas label="Sizes · sm 36 · md 44 · lg 48">
               <div className={styles.row}>
+                <Button type="button" size="sm">
+                  Small
+                </Button>
+                <Button type="button" size="md">
+                  Medium
+                </Button>
+                <Button type="button" size="lg">
+                  Large
+                </Button>
                 <Button type="button" disabled>
                   Disabled
                 </Button>
-                <Button type="button" variant="secondary" disabled>
-                  Disabled secondary
+              </div>
+            </Canvas>
+            <div className={styles.gap} />
+            <Canvas label="With icons · Lucide 20px">
+              <div className={styles.row}>
+                <Button type="button">
+                  <Search size={20} strokeWidth={1.75} />
+                  Найти кандидатов
                 </Button>
-                <span className={styles.codeChip}>disabled во время mutation</span>
+                <Button type="button" variant="secondary">
+                  <Users size={20} strokeWidth={1.75} />
+                  Shortlist
+                </Button>
               </div>
             </Canvas>
           </Section>
 
-          <Section id="forms" title="Forms" hint="Input · Select · Textarea · Checkbox">
+          <Section id="forms" title="Forms" hint="Input · Select · Textarea · Checkbox · Radio · Switch">
             <div className={styles.grid2}>
               <Canvas label="Controls">
                 <div className={styles.stack}>
-                  <Input label="Email" name="kit-email" placeholder="candidate@demo.ru" defaultValue="candidate@demo.ru" />
-                  <Input label="С ошибкой" name="kit-error" error="Обязательное поле" />
+                  <Input
+                    label="Email"
+                    name="kit-email"
+                    placeholder="candidate@demo.ru"
+                    defaultValue="candidate@demo.ru"
+                  />
+                  <Input label="С ошибкой" name="kit-error" error="Укажите корректный email" />
                   <Select
                     label="Роль"
                     name="kit-role"
@@ -337,37 +475,77 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
                       { value: 'employer', label: 'Работодатель' },
                     ]}
                   />
-                  <Textarea label="О себе" name="kit-about" rows={3} defaultValue="Frontend, React, дизайн-системы." />
+                  <Textarea
+                    label="О себе"
+                    name="kit-about"
+                    rows={3}
+                    defaultValue="Frontend, React, дизайн-системы."
+                  />
+                </div>
+              </Canvas>
+              <Canvas label="Choice controls">
+                <div className={styles.stack}>
                   <Checkbox
                     label="Открыт к офферам"
                     name="kit-ready"
                     checked={checked}
                     onChange={(e) => setChecked(e.target.checked)}
                   />
+                  <Switch
+                    label="Уведомления о новых вакансиях"
+                    name="kit-switch"
+                    checked={switchOn}
+                    onChange={(e) => setSwitchOn(e.target.checked)}
+                  />
+                  <div className={styles.stack} style={{ gap: 8 }}>
+                    <Radio
+                      label="Удалённо"
+                      name="kit-format"
+                      value="remote"
+                      checked={radioVal === 'remote'}
+                      onChange={() => setRadioVal('remote')}
+                    />
+                    <Radio
+                      label="Гибрид"
+                      name="kit-format"
+                      value="hybrid"
+                      checked={radioVal === 'hybrid'}
+                      onChange={() => setRadioVal('hybrid')}
+                    />
+                    <Radio
+                      label="Офис"
+                      name="kit-format"
+                      value="office"
+                      checked={radioVal === 'office'}
+                      onChange={() => setRadioVal('office')}
+                    />
+                  </div>
+                  <Tabs
+                    tabs={[
+                      { id: 'overview', label: 'Обзор' },
+                      { id: 'fsp', label: 'ФСП' },
+                      { id: 'tests', label: 'Тесты' },
+                    ]}
+                    value={tab}
+                    onChange={setTab}
+                  />
+                  <p className={styles.typeCaption}>
+                    Активная вкладка: <strong>{tab}</strong>
+                  </p>
                 </div>
-              </Canvas>
-              <Canvas label="Tabs">
-                <Tabs
-                  tabs={[
-                    { id: 'overview', label: 'Обзор' },
-                    { id: 'fsp', label: 'ФСП' },
-                    { id: 'tests', label: 'Тесты' },
-                  ]}
-                  value={tab}
-                  onChange={setTab}
-                />
-                <p style={{ marginTop: '1rem', marginBottom: 0 }}>
-                  Активная вкладка: <strong>{tab}</strong>
-                </p>
               </Canvas>
             </div>
           </Section>
 
-          <Section id="feedback" title="Feedback & states" hint="Каждый data view: loading · success · empty · error · disabled · success action">
+          <Section
+            id="feedback"
+            title="Feedback & states"
+            hint="loading · empty · error · progress · modal · toast"
+          >
             <div className={styles.stateGrid}>
               <Canvas label="Loading">
                 <Loader label="Загрузка Talent Pool…" />
-                <div className={styles.stack} style={{ marginTop: '1rem' }}>
+                <div className={styles.stack} style={{ marginTop: 16 }}>
                   <Skeleton height={18} width="70%" />
                   <Skeleton height={14} />
                   <Skeleton height={14} width="85%" />
@@ -375,11 +553,11 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
               </Canvas>
               <Canvas label="Empty">
                 <EmptyState
-                  title="Кандидаты не найдены"
-                  description="Смягчи фильтры или обнови Talent Pool."
+                  title="Пока нет входящих предложений"
+                  description="Когда работодатели отправят приглашения, они появятся здесь."
                   action={
                     <Button type="button" variant="secondary">
-                      Сбросить фильтры
+                      Открыть профиль
                     </Button>
                   }
                 />
@@ -392,19 +570,42 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
                 />
               </Canvas>
               <Canvas label="Progress + Modal">
-                <p className={styles.canvasLabel} style={{ marginBottom: '0.5rem' }}>
+                <p className={styles.canvasLabel} style={{ marginBottom: 8 }}>
                   Profile completeness 72%
                 </p>
                 <ProgressBar value={72} />
-                <div style={{ marginTop: '1rem' }}>
+                <div style={{ marginTop: 16 }}>
                   <Button type="button" onClick={() => setModalOpen(true)}>
                     Открыть Modal
                   </Button>
                 </div>
               </Canvas>
             </div>
+            <div className={styles.gap} />
+            <Canvas label="Toast patterns">
+              <div className={styles.toastStack}>
+                <div className={`${styles.toast} ${styles.toastSuccess}`}>
+                  <CheckCircle2 size={20} strokeWidth={1.75} />
+                  Профиль сохранён
+                </div>
+                <div className={`${styles.toast} ${styles.toastInfo}`}>
+                  <Info size={20} strokeWidth={1.75} />
+                  Найдено 24 кандидата
+                </div>
+                <div className={`${styles.toast} ${styles.toastWarn}`}>
+                  <AlertTriangle size={20} strokeWidth={1.75} />
+                  Срок оффера истекает через 2 дня
+                </div>
+                <div className={`${styles.toast} ${styles.toastError}`}>
+                  <AlertCircle size={20} strokeWidth={1.75} />
+                  Ошибка API — повторите позже
+                </div>
+              </div>
+            </Canvas>
             <Modal open={modalOpen} title="Отправить оффер" onClose={() => setModalOpen(false)}>
-              <p>Modal — контейнер для форм и подтверждений. Backdrop закрывает.</p>
+              <p className={styles.typeBody}>
+                Modal 560px · radius 20 · overlay rgba(27,28,33,0.45). Escape / backdrop закрывают.
+              </p>
               <div className={styles.row}>
                 <Button type="button" onClick={() => setModalOpen(false)}>
                   Понятно
@@ -416,18 +617,19 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
             </Modal>
           </Section>
 
-          <Section id="badges" title="Badges & markers" hint="Badge tones · Grade · FSP · Skills · Salary">
+          <Section id="badges" title="Badges & skill chips" hint="Статусы + skill chips · не путать Verified без источника">
             <Canvas label="Badge tones">
               <div className={styles.row}>
-                <Badge>default</Badge>
-                <Badge tone="accent">accent / new</Badge>
-                <Badge tone="success">success / accepted</Badge>
-                <Badge tone="warn">warn / viewed</Badge>
-                <Badge tone="danger">danger / declined</Badge>
-                <Badge tone="fsp">fsp</Badge>
+                <Badge>Заявлено кандидатом</Badge>
+                <Badge tone="accent">Оффер просмотрен</Badge>
+                <Badge tone="success">Подтверждён тестом</Badge>
+                <Badge tone="warn">Ожидает проверки</Badge>
+                <Badge tone="danger">Оффер отклонён</Badge>
+                <Badge tone="fsp">Демо-интеграция ФСП</Badge>
               </div>
             </Canvas>
-            <div className={styles.grid2} style={{ marginTop: '1rem' }}>
+            <div className={styles.gap} />
+            <div className={styles.grid2}>
               <Canvas label="Domain badges">
                 <div className={styles.row}>
                   <GradeBadge grade="middle" />
@@ -435,21 +637,159 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
                   <FSPVerificationBadge />
                   <FSPVerificationBadge label="FSP Verified" />
                 </div>
-                <div className={styles.row} style={{ marginTop: '0.85rem' }}>
-                  {['React', 'TypeScript', 'Go', 'PostgreSQL'].map((skill) => (
+                <div className={styles.row} style={{ marginTop: 14 }}>
+                  {['Python', 'React', 'TypeScript', 'FastAPI', 'PostgreSQL'].map((skill) => (
                     <SkillBadge key={skill} skill={skill} />
                   ))}
                 </div>
               </Canvas>
               <Canvas label="SalaryRange">
-                <p style={{ margin: 0, fontSize: '1.25rem' }}>
-                  <strong>
-                    <SalaryRange from={250000} to={320000} currency="RUB" />
-                  </strong>
+                <p className={styles.typeKpi} style={{ fontSize: 22, lineHeight: '30px' }}>
+                  <SalaryRange from={250000} to={320000} currency="RUB" />
                 </p>
-                <p className={styles.typeMeta}>formatters · не считать на клиенте бизнес-логику</p>
+                <p className={styles.typeMeta}>formatters · не считать бизнес-логику на клиенте</p>
               </Canvas>
             </div>
+            <div className={styles.gap} />
+            <Canvas label="Icons · Lucide only">
+              <div className={styles.iconRow}>
+                <div className={styles.iconItem}>
+                  <Search size={16} strokeWidth={1.75} />
+                  16
+                </div>
+                <div className={styles.iconItem}>
+                  <Bell size={20} strokeWidth={1.75} />
+                  20
+                </div>
+                <div className={`${styles.iconItem} ${styles.iconActive}`}>
+                  <LayoutDashboard size={24} strokeWidth={1.75} />
+                  24 active
+                </div>
+                <div className={styles.iconItem}>
+                  <Briefcase size={28} strokeWidth={1.75} />
+                  28
+                </div>
+              </div>
+            </Canvas>
+          </Section>
+
+          <Section id="layout" title="Layout chrome" hint="Sidebar 244 · Topbar 72 · Bento 12-col · gap 16">
+            <Canvas label="App shell preview">
+              <div className={styles.chromeDemo}>
+                <aside className={styles.chromeSidebar}>
+                  <div className={styles.chromeNavItem}>FSP Talent</div>
+                  <div className={`${styles.chromeNavItem} ${styles.chromeNavItemActive}`}>Обзор</div>
+                  <div className={styles.chromeNavItem}>Профиль</div>
+                  <div className={styles.chromeNavItem}>Talent Pool</div>
+                  <div className={styles.chromeNavItem}>Офферы</div>
+                </aside>
+                <div className={styles.chromeMain}>
+                  <div className={styles.chromeTopbar}>
+                    <Bell size={20} strokeWidth={1.75} color="var(--text-secondary)" />
+                    <div className={styles.chromeNavItem} style={{ minHeight: 0, padding: 0 }}>
+                      А. Иванов · Кандидат
+                    </div>
+                  </div>
+                  <div className={styles.chromeBody}>
+                    <div className={styles.chromeCard}>
+                      <p className={styles.typeH4} style={{ margin: 0 }}>
+                        Контент страницы
+                      </p>
+                      <p className={styles.typeCaption}>page padding 24 · content max 1600</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Canvas>
+            <div className={styles.gap} />
+            <Canvas label="Bento cards">
+              <div className={styles.bentoGrid}>
+                <Card variant="hero" className={styles.bento6}>
+                  <p className={styles.typeOverline}>Hero card</p>
+                  <h3 style={{ margin: '8px 0' }}>Цифровой карьерный паспорт</h3>
+                  <p className={styles.typeSmall} style={{ margin: 0 }}>
+                    Radius 20 · padding 28 · слабый primary gradient · ≤2 CTA
+                  </p>
+                  <div className={styles.row} style={{ marginTop: 16 }}>
+                    <Button type="button" size="sm">
+                      Пройти тест
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm">
+                      Редактировать
+                    </Button>
+                  </div>
+                </Card>
+                <Card className={styles.bento3}>
+                  <p className={styles.metricValue}>92</p>
+                  <p className={styles.metricLabel}>Match Score</p>
+                </Card>
+                <Card className={styles.bento3}>
+                  <p className={styles.metricValue}>Middle</p>
+                  <p className={styles.metricLabel}>Подтверждённый грейд</p>
+                </Card>
+                <Card variant="compact" className={styles.bento4}>
+                  <p className={styles.typeH4} style={{ margin: 0 }}>
+                    Compact
+                  </p>
+                  <p className={styles.typeCaption}>padding 16 · radius 12</p>
+                </Card>
+                <Card className={styles.bento4}>
+                  <p className={styles.typeH4} style={{ margin: 0 }}>
+                    Bento default
+                  </p>
+                  <p className={styles.typeCaption}>padding 24 · radius 16 · shadow-card</p>
+                </Card>
+                <Card className={styles.bento4} to="/ui-kit#layout">
+                  <p className={styles.typeH4} style={{ margin: 0 }}>
+                    Interactive
+                  </p>
+                  <p className={styles.typeCaption}>hover → border-hover + shadow-card-hover</p>
+                </Card>
+              </div>
+            </Canvas>
+          </Section>
+
+          <Section id="tables" title="Tables" hint="Header #F7F7FA · row 56 · hover #F7F6FF · selected primary-50">
+            <Canvas label="Admin / invitations pattern">
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Кандидат</th>
+                      <th>Грейд</th>
+                      <th>Статус</th>
+                      <th>Match</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr data-selected="true">
+                      <td>Алина Котова</td>
+                      <td>Middle</td>
+                      <td>
+                        <Badge tone="success">Подтверждён тестом</Badge>
+                      </td>
+                      <td>92%</td>
+                    </tr>
+                    <tr>
+                      <td>Игорь Семёнов</td>
+                      <td>Junior</td>
+                      <td>
+                        <Badge tone="warn">Ожидает проверки</Badge>
+                      </td>
+                      <td>71%</td>
+                    </tr>
+                    <tr>
+                      <td>Мария Орлова</td>
+                      <td>—</td>
+                      <td>
+                        <Badge>Не подтверждён</Badge>
+                      </td>
+                      <td>54%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </Canvas>
           </Section>
 
           <Section id="domain" title="Domain cards" hint="entities/ui · props = DTO, без fetch">
@@ -471,26 +811,15 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
                 )}
               </Canvas>
             </div>
-            <div style={{ marginTop: '1rem' }}>
-              <Canvas label="CandidateProfileView · employer mode">
-                <CandidateProfileView
-                  profile={profile}
-                  achievements={fspByCandidate[profile.id] ?? []}
-                  match={match}
-                  mode="employer"
-                />
-              </Canvas>
-            </div>
-            <div style={{ marginTop: '1rem' }}>
-              <Canvas label="Card atom">
-                <Card>
-                  <h3 style={{ marginTop: 0 }}>Card</h3>
-                  <p style={{ marginBottom: 0 }}>
-                    Контейнер взаимодействия. В hero лендинга — нельзя.
-                  </p>
-                </Card>
-              </Canvas>
-            </div>
+            <div className={styles.gap} />
+            <Canvas label="CandidateProfileView · employer mode">
+              <CandidateProfileView
+                profile={profile}
+                achievements={fspByCandidate[profile.id] ?? []}
+                match={match}
+                mode="employer"
+              />
+            </Canvas>
           </Section>
 
           <Section id="match" title="Match Score & Skill Radar" hint="Только отображение DTO с backend">
@@ -543,12 +872,12 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
             </Canvas>
           </Section>
 
-          <Section id="landing" title="Landing surface" hint="FSP Minimal Tech · shared tokens · LandingPage.module.css">
+          <Section id="landing" title="Landing surface" hint="LandingPage.module.css · shared FSP tokens">
             <div className={styles.landingStrip}>
               <div className={styles.landingLight}>
                 <div>
                   <p className={styles.landingBrand}>FSP Talent</p>
-                  <p style={{ margin: '0.5rem 0 0', opacity: 0.75 }}>
+                  <p style={{ margin: '8px 0 0', opacity: 0.75, fontSize: 13 }}>
                     Page #F7F7FA · Primary #402FFF · JetBrains Mono
                   </p>
                 </div>
@@ -560,7 +889,7 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
               <div className={styles.landingHero}>
                 <div>
                   <p className={styles.landingBrand}>FSP Talent</p>
-                  <p style={{ margin: '0.5rem 0 0', opacity: 0.75 }}>
+                  <p style={{ margin: '8px 0 0', opacity: 0.75, fontSize: 13 }}>
                     Full-bleed hero · brand first · no cards in first viewport
                   </p>
                 </div>
@@ -571,19 +900,20 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
               </div>
             </div>
             <p className={styles.footerNote}>
-              Landing: sticky topbar 72px, bento 16px, buttons 12px / 44px. Без dark-theme toggle.
+              Landing: sticky topbar 72px, bento 16px, buttons 12px / 44px. Красный #EC1D35 — только
+              фирменные акценты и destructive, не primary CTA.
             </p>
           </Section>
 
-          <Section id="rules" title="Rules" hint="Не ломай границы ТЗ">
+          <Section id="rules" title="Rules" hint="Не ломай границы продукта">
             <div className={styles.principles}>
               {[
                 ['Backend owns truth', 'Match Score, test scores, FSP, contacts — только DTO.'],
                 ['No false claims', '«не указан в профиле» ≠ «не умеет».'],
                 ['FSP ≠ self-reported', 'FSPVerificationBadge только на данных ФСП.'],
-                ['Domain components are dumb', 'Fetch только в pages/hooks.'],
+                ['Tokens only', 'HEX в компонентах запрещён — только CSS variables.'],
+                ['One system', 'Все три кабинета на одной палитре и компонентах.'],
                 ['6 states', 'loading · success · empty · error · disabled · action success.'],
-                ['Cards for interaction', 'Hero лендинга — без карточек и stats.'],
               ].map(([title, text], i) => (
                 <div key={title} className={styles.principle}>
                   <span className={styles.principleNum}>0{i + 1}</span>
@@ -595,8 +925,11 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
               ))}
             </div>
             <p className={styles.footerNote}>
-              Спека в markdown: <code className={styles.codeChip}>frontend/UI_KIT.md</code> · этот экран — visual
-              source of truth для разработки.
+              Спека: <code className={styles.codeChip}>frontend/UI_KIT.md</code> · brandbook:{' '}
+              <a href="https://fsp-russia.ru/press/brandbook/" target="_blank" rel="noreferrer">
+                fsp-russia.ru/press/brandbook
+              </a>{' '}
+              · этот экран — visual source of truth.
             </p>
           </Section>
         </div>

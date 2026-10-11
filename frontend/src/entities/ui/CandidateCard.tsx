@@ -1,6 +1,7 @@
 import type { TalentPoolItem } from '@/entities/types';
 import {
   formatGrade,
+  formatSpecialization,
   formatReadiness,
 } from '@/shared/lib/formatters';
 import { Badge, Card, uiStyles } from '@/shared/ui';
@@ -20,11 +21,11 @@ export function CandidateCard({
         <div>
           <h3 style={{ margin: 0 }}>{candidate.fullName}</h3>
           <p style={{ margin: '0.25rem 0 0' }}>
-            {candidate.specialization} · {formatGrade(candidate.claimedGrade)}
+            {formatSpecialization(candidate.specialization)} · {formatGrade(candidate.claimedGrade)}
           </p>
         </div>
         {candidate.match ? (
-          <Badge tone="success">Match {candidate.match.score}%</Badge>
+          <Badge tone="success">Соответствие {candidate.match.score}%</Badge>
         ) : null}
       </div>
       <div className={uiStyles.skills} style={{ marginTop: '0.75rem' }}>
@@ -34,7 +35,7 @@ export function CandidateCard({
       </div>
       <div className="row" style={{ marginTop: '0.85rem' }}>
         <Badge tone="accent">{formatReadiness(candidate.readiness)}</Badge>
-        {candidate.hasFspAchievements ? <FSPVerificationBadge label="FSP Verified" /> : null}
+        {candidate.hasFspAchievements ? <FSPVerificationBadge label="Подтверждено ФСП" /> : null}
       </div>
       {candidate.match?.reasons?.length ? (
         <p style={{ marginTop: '0.75rem', marginBottom: 0, fontSize: '0.9rem' }}>

@@ -29,10 +29,10 @@ export function EmployerComparePage() {
     return (
       <EmptyState
         title="Выберите минимум 2 кандидатов"
-        description="Отметьте кандидатов в Talent Pool и нажмите «Сравнить»."
+        description="Отметьте кандидатов в пуле и нажмите «Сравнить»."
         action={
           <Link to="/employer/talent-pool">
-            <Button type="button">В Talent Pool</Button>
+            <Button type="button">В пул кандидатов</Button>
           </Link>
         }
       />
@@ -57,7 +57,7 @@ export function EmployerComparePage() {
       <div className="page-header">
         <div>
           <h1>Сравнение кандидатов</h1>
-          <p>Матрица навыков и Skill Radar — данные с Backend.</p>
+          <p>Матрица навыков и радар — данные с сервера.</p>
         </div>
         <Link to="/employer/talent-pool">
           <Button type="button" variant="secondary">

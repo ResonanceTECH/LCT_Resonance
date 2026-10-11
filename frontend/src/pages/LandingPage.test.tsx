@@ -8,10 +8,7 @@ describe('LandingPage', () => {
     renderWithProviders(<LandingPage />, { route: '/' });
 
     expect(screen.getByTestId('landing-page')).toBeInTheDocument();
-    expect(screen.getAllByText('FSP Talent').length).toBeGreaterThan(0);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      /подтверждёнными компетенциями/i,
-    );
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/навык уже доказан/i);
 
     const startLinks = screen.getAllByRole('link', { name: 'Начать' });
     expect(startLinks.length).toBeGreaterThan(0);

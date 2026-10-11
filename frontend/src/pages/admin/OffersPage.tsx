@@ -16,17 +16,17 @@ import {
 /** Admin monitoring labels — map internal statuses to product terms. */
 const STATUS_FILTER: { value: OfferStatus | ''; label: string }[] = [
   { value: '', label: 'Все статусы' },
-  { value: 'new', label: 'SENT' },
-  { value: 'viewed', label: 'VIEWED' },
-  { value: 'accepted', label: 'ACCEPTED' },
-  { value: 'declined', label: 'DECLINED' },
+  { value: 'new', label: 'Новое' },
+  { value: 'viewed', label: 'Просмотрено' },
+  { value: 'accepted', label: 'Принято' },
+  { value: 'declined', label: 'Отклонено' },
 ];
 
 const STATUS_BADGE: Record<OfferStatus, { label: string; tone: 'accent' | 'success' | 'danger' | 'default' }> = {
-  new: { label: 'SENT', tone: 'accent' },
-  viewed: { label: 'VIEWED', tone: 'default' },
-  accepted: { label: 'ACCEPTED', tone: 'success' },
-  declined: { label: 'DECLINED', tone: 'danger' },
+  new: { label: 'Новое', tone: 'accent' },
+  viewed: { label: 'Просмотрено', tone: 'default' },
+  accepted: { label: 'Принято', tone: 'success' },
+  declined: { label: 'Отклонено', tone: 'danger' },
 };
 
 export function AdminOffersPage() {

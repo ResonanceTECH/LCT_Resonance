@@ -195,6 +195,15 @@ def reasons(
                 positive=required_matched == len(vacancy.required_skills),
             )
         )
+    if vacancy.nice_to_have_skills:
+        optional_matched = sum(1 for s in vacancy.nice_to_have_skills if s in matched)
+        out.append(
+            MatcherReason(
+                code="SKILLS_OPTIONAL",
+                params={"matched": optional_matched, "total": len(vacancy.nice_to_have_skills)},
+                positive=optional_matched > 0,
+            )
+        )
 
     work_format_fits = _work_format_fits(candidate, vacancy)
     if work_format_fits is not None:

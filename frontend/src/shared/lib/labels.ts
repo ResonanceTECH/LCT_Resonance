@@ -1,11 +1,11 @@
 import type { Grade, ReadinessStatus, WorkFormat } from '@/entities/types';
 
 export const GRADE_OPTIONS: { value: Grade; label: string }[] = [
-  { value: 'intern', label: 'Intern' },
-  { value: 'junior', label: 'Junior' },
-  { value: 'middle', label: 'Middle' },
-  { value: 'senior', label: 'Senior' },
-  { value: 'lead', label: 'Lead' },
+  { value: 'intern', label: 'Стажёр' },
+  { value: 'junior', label: 'Джуниор' },
+  { value: 'middle', label: 'Мидл' },
+  { value: 'senior', label: 'Сеньор' },
+  { value: 'lead', label: 'Лид' },
 ];
 
 export const WORK_FORMAT_OPTIONS: { value: WorkFormat; label: string }[] = [

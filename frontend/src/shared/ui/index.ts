@@ -3,6 +3,8 @@ export { Input } from './Input';
 export { Select } from './Select';
 export { Textarea } from './Textarea';
 export { Checkbox } from './Checkbox';
+export { Radio } from './Radio';
+export { Switch } from './Switch';
 export { Badge } from './Badge';
 export { Card } from './Card';
 export { Tabs } from './Tabs';
@@ -12,3 +14,4 @@ export { EmptyState } from './EmptyState';
 export { ErrorState } from './ErrorState';
 export { Modal } from './Modal';
 export { default as uiStyles } from './ui.module.css';
+

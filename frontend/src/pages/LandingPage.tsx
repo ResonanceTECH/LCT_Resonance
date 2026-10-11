@@ -33,7 +33,7 @@ function getActiveSectionId(ids: string[]): string | null {
   return active;
 }
 
-function MatchRing({ value, size = 44 }: { value: number; size?: number }) {
+function MatchRing({ value, size = 72 }: { value: number; size?: number }) {
   const r = 16;
   const c = 2 * Math.PI * r;
   const offset = c - (value / 100) * c;
@@ -52,357 +52,217 @@ function MatchRing({ value, size = 44 }: { value: number; size?: number }) {
   );
 }
 
-const CANDIDATE_NAV = [
-  'Обзор',
-  'Профиль',
-  'ФСП',
-  'Тесты',
-  'Предложения',
-  'Вакансии',
-] as const;
-
-const EMPLOYER_NAV = [
-  'Обзор',
-  'Пул кандидатов',
-  'Вакансии',
-  'Избранное',
-  'Сравнение',
-  'Предложения',
-] as const;
-
-const CANDIDATE_NAV_BY_STEP: Record<string, number> = {
-  profile: 1,
-  fsp: 2,
-  tests: 3,
-  offers: 4,
-};
-
-const EMPLOYER_NAV_BY_STEP: Record<string, number> = {
-  vacancy: 2,
-  pool: 1,
-  compare: 4,
-  offer: 5,
-};
-
-const DEMO_CANDIDATES = [
-  {
-    initials: 'АК',
-    name: 'Алина К.',
-    role: 'Бэкенд · средний',
-    match: 92,
-    skills: ['Go', 'PostgreSQL', 'Docker'],
-    badges: ['ФСП', 'Тест'],
-    reason: 'Совпал стек · есть достижения ФСП',
-  },
-  {
-    initials: 'МР',
-    name: 'Максим Р.',
-    role: 'Бэкенд · старший',
-    match: 84,
-    skills: ['Python', 'FastAPI', 'Redis'],
-    badges: ['Тест'],
-    reason: 'Уровень подтверждён тестом',
-  },
-  {
-    initials: 'ИС',
-    name: 'Игорь С.',
-    role: 'Фулстек · средний',
-    match: 77,
-    skills: ['TypeScript', 'React', 'Go'],
-    badges: ['Заявлено'],
-    reason: 'Частичное совпадение по стеку',
-  },
-] as const;
-
-function SkillChips({ skills }: { skills: readonly string[] }) {
+/** Focused product slices — not a full cabinet clone. */
+function DemoPassport() {
   return (
-    <div className={styles.uiSkills}>
-      {skills.map((s) => (
-        <span key={s} className={styles.uiSkill}>
-          {s}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function PreviewPageHead({
-  title,
-  subtitle,
-  action,
-}: {
-  title: string;
-  subtitle: string;
-  action?: string;
-}) {
-  return (
-    <div className={styles.uiPageHead}>
-      <div>
-        <h3 className={styles.uiPageTitle}>{title}</h3>
-        <p className={styles.uiPageSub}>{subtitle}</p>
+    <div className={styles.demo}>
+      <p className={styles.demoEyebrow}>Цифровой паспорт</p>
+      <div className={styles.demoPassport}>
+        <div className={styles.demoPassportMain}>
+          <div className={styles.demoPerson}>
+            <span className={styles.uiAvatar}>АК</span>
+            <div>
+              <p className={styles.demoTitle}>Алина К.</p>
+              <p className={styles.demoMeta}>Бэкенд · средний · гибрид</p>
+            </div>
+          </div>
+          <div className={styles.demoBadgeRow}>
+            <span className={styles.uiBadgeOk}>ФСП</span>
+            <span className={styles.uiBadgeAccent}>Тест пройден</span>
+          </div>
+          <div className={styles.demoSkillBlock}>
+            <p className={styles.demoLabel}>Подтверждено тестом</p>
+            <div className={styles.uiSkills}>
+              {['Go', 'PostgreSQL', 'Docker'].map((s) => (
+                <span key={s} className={styles.uiSkill}>
+                  {s}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className={styles.demoSkillBlock}>
+            <p className={styles.demoLabel}>Заявлено кандидатом</p>
+            <div className={styles.uiSkills}>
+              <span className={styles.uiSkillMute}>Kafka</span>
+              <span className={styles.uiSkillMute}>gRPC</span>
+            </div>
+          </div>
+        </div>
+        <aside className={styles.demoPassportSide}>
+          <div className={styles.demoQr} aria-hidden>
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+          <p className={styles.demoMeta}>Контакты скрыты</p>
+        </aside>
       </div>
-      {action ? <span className={styles.uiBtnPrimary}>{action}</span> : null}
     </div>
   );
 }
 
-function CandidatePreviewBody({ stepId }: { stepId: string }) {
-  if (stepId === 'fsp') {
-    return (
-      <>
-        <PreviewPageHead title="Достижения ФСП" subtitle="Подтверждённые факты отдельно от заявленных навыков" />
-        <div className={styles.uiCardList}>
-          {[
-            { title: 'Олимпиада ФСП', meta: 'Алгоритмы · 2025 · топ-10%', tone: 'ok' as const },
-            { title: 'Рейтинг дисциплины', meta: 'Спортивное программирование · активен', tone: 'ok' as const },
-            { title: 'Заявленный Kafka', meta: 'Не из реестра ФСП', tone: 'muted' as const },
-          ].map((row) => (
-            <div key={row.title} className={styles.uiRowCard}>
-              <div>
-                <p className={styles.uiRowTitle}>{row.title}</p>
-                <p className={styles.uiRowMeta}>{row.meta}</p>
-              </div>
-              <span className={row.tone === 'ok' ? styles.uiBadgeOk : styles.uiBadgeMute}>
-                {row.tone === 'ok' ? 'ФСП' : 'Заявлено'}
-              </span>
-            </div>
-          ))}
-        </div>
-      </>
-    );
-  }
-
-  if (stepId === 'tests') {
-    return (
-      <>
-        <PreviewPageHead title="Тестирование" subtitle="Результат влияет на оценку соответствия" action="Начать тест" />
-        <div className={styles.uiSplit}>
-          <div className={styles.uiPanel}>
-            <div className={styles.uiMatchHero}>
-              <MatchRing value={82} size={64} />
-              <div>
-                <p className={styles.uiMatchValue}>82 / 100</p>
-                <p className={styles.uiRowMeta}>Бэкенд · средний · подтверждён</p>
-              </div>
-            </div>
-            <div className={styles.uiProgressTrack}>
-              <span style={{ width: '82%' }} />
-            </div>
-          </div>
-          <div className={styles.uiPanel}>
-            <p className={styles.uiPanelLabel}>Навыки по источнику</p>
-            <ul className={styles.uiPlainList}>
-              <li>
-                <span>Go</span>
-                <span className={styles.uiBadgeOk}>тест</span>
-              </li>
-              <li>
-                <span>PostgreSQL</span>
-                <span className={styles.uiBadgeOk}>тест</span>
-              </li>
-              <li>
-                <span>Kafka</span>
-                <span className={styles.uiBadgeMute}>заявлено</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  if (stepId === 'offers') {
-    return (
-      <>
-        <PreviewPageHead title="Входящие предложения" subtitle="Контакты скрыты до согласия" />
-        <div className={styles.uiCardList}>
-          {[
-            { company: 'Компания А', role: 'Старший бэкенд', pay: '280–320 тыс ₽', status: 'Новое' },
-            { company: 'Компания Б', role: 'Инженер данных', pay: '250–290 тыс ₽', status: 'Просмотрено' },
-          ].map((o) => (
-            <div key={o.company} className={styles.uiRowCard}>
-              <div>
-                <p className={styles.uiRowTitle}>
-                  {o.company} · {o.role}
-                </p>
-                <p className={styles.uiRowMeta}>
-                  {o.pay} · удалённо · контакты закрыты
-                </p>
-              </div>
-              <span className={styles.uiBadgeAccent}>{o.status}</span>
-            </div>
-          ))}
-        </div>
-      </>
-    );
-  }
-
+function DemoMatch() {
   return (
-    <>
-      <PreviewPageHead
-        title="Кабинет кандидата"
-        subtitle="Сводка по профилю, предложениям и заполненности"
-        action="Редактировать"
-      />
-      <div className={styles.uiStats}>
+    <div className={styles.demo}>
+      <p className={styles.demoEyebrow}>Совпадение по навыкам</p>
+      <div className={styles.demoMatchHead}>
+        <MatchRing value={92} />
+        <div>
+          <p className={styles.demoMatchValue}>92%</p>
+          <p className={styles.demoMeta}>к вакансии «Старший бэкенд»</p>
+        </div>
+      </div>
+      <ul className={styles.demoReasons}>
+        <li className={styles.demoReasonOk}>Go и PostgreSQL подтверждены тестом</li>
+        <li className={styles.demoReasonOk}>Есть достижения ФСП по алгоритмам</li>
+        <li className={styles.demoReasonWarn}>Kafka не указана в профиле</li>
+      </ul>
+      <div className={styles.demoBars}>
         {[
-          ['Просмотры', '128'],
-          ['Предложения', '2'],
-          ['Принято', '0'],
-          ['Заполненность', '72%'],
-        ].map(([label, value]) => (
-          <div key={label} className={styles.uiStat}>
-            <span>{label}</span>
-            <strong>{value}</strong>
+          { name: 'Go', need: 90, have: 92 },
+          { name: 'PostgreSQL', need: 85, have: 88 },
+          { name: 'Kafka', need: 70, have: 0 },
+        ].map((row) => (
+          <div key={row.name} className={styles.demoBarRow}>
+            <span>{row.name}</span>
+            <div className={styles.demoBarTrack}>
+              <i style={{ width: `${row.need}%` }} className={styles.demoBarNeed} />
+              <b style={{ width: `${row.have}%` }} className={styles.demoBarHave} />
+            </div>
           </div>
         ))}
       </div>
-      <div className={styles.uiPanel}>
-        <div className={styles.uiPerson}>
-          <span className={styles.uiAvatar}>АК</span>
-          <div>
-            <p className={styles.uiRowTitle}>Алина К.</p>
-            <p className={styles.uiRowMeta}>Инженер бэкенда · средний · гибрид</p>
-          </div>
-          <span className={styles.uiBadgeMute}>ФСП не синхр.</span>
-        </div>
-        <SkillChips skills={['Go', 'PostgreSQL', 'Docker', 'Kafka']} />
-        <div className={styles.uiProgressTrack}>
-          <span style={{ width: '72%' }} />
-        </div>
-        <p className={styles.uiRowMeta}>Заполненность профиля 72%</p>
-      </div>
-    </>
+    </div>
   );
 }
 
-function EmployerPreviewBody({ stepId }: { stepId: string }) {
-  if (stepId === 'vacancy') {
-    return (
-      <>
-        <PreviewPageHead title="Новая вакансия" subtitle="Стек и вилка — часть сигнала" action="Опубликовать" />
-        <div className={styles.uiForm}>
-          {[
-            ['Должность', 'Старший инженер бэкенда'],
-            ['Уровень', 'Старший'],
-            ['Вилка', '280–350 тыс ₽'],
-            ['Формат', 'Удалённо'],
-            ['Стек', 'Go, PostgreSQL, Kafka'],
-          ].map(([label, value]) => (
-            <label key={label} className={styles.uiField}>
-              <span>{label}</span>
-              <div>{value}</div>
-            </label>
-          ))}
-        </div>
-      </>
-    );
-  }
-
-  if (stepId === 'compare') {
-    return (
-      <>
-        <PreviewPageHead title="Сравнение" subtitle="До 4 кандидатов рядом" action="Отправить предложение" />
-        <div className={styles.uiCompare}>
-          {DEMO_CANDIDATES.slice(0, 2).map((c) => (
-            <div key={c.name} className={styles.uiCompareCol}>
-              <div className={styles.uiPerson}>
-                <span className={styles.uiAvatar}>{c.initials}</span>
-                <div>
-                  <p className={styles.uiRowTitle}>{c.name}</p>
-                  <p className={styles.uiRowMeta}>{c.role}</p>
-                </div>
-              </div>
-              <div className={styles.uiMatchHero}>
-                <MatchRing value={c.match} />
-                <p className={styles.uiMatchValue}>{c.match}%</p>
-              </div>
-              <SkillChips skills={c.skills} />
-              <div className={styles.uiBadgeRow}>
-                {c.badges.map((b) => (
-                  <span key={b} className={b === 'ФСП' ? styles.uiBadgeOk : styles.uiBadgeAccent}>
-                    {b}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </>
-    );
-  }
-
-  if (stepId === 'offer') {
-    return (
-      <>
-        <PreviewPageHead title="Новое предложение" subtitle="Алина К. · соответствие 92%" action="Отправить" />
-        <div className={styles.uiForm}>
-          {[
-            ['Кандидат', 'Алина К. · бэкенд · средний'],
-            ['Вакансия', 'Старший инженер бэкенда'],
-            ['Вилка', '300 тыс ₽'],
-            ['Формат', 'Удалённо · полная занятость'],
-            ['Контакты', 'Скрыты до согласия'],
-          ].map(([label, value]) => (
-            <label key={label} className={styles.uiField}>
-              <span>{label}</span>
-              <div>{value}</div>
-            </label>
-          ))}
-        </div>
-      </>
-    );
-  }
-
+function DemoVacancy() {
   return (
-    <>
-      <PreviewPageHead
-        title="Пул кандидатов"
-        subtitle="Оценка соответствия по вакансии «Старший бэкенд»"
-        action="Сравнить (2)"
-      />
-      <div className={styles.uiFilters}>
-        <span className={styles.uiFilterActive}>Вакансия: старший бэкенд</span>
-        <span className={styles.uiFilter}>Уровень</span>
-        <span className={styles.uiFilter}>ФСП</span>
-        <span className={styles.uiFilter}>Формат</span>
-        <span className={styles.uiFilter}>Стек</span>
-      </div>
-      <div className={styles.uiCardList}>
-        {DEMO_CANDIDATES.map((c) => (
-          <article key={c.name} className={styles.uiCandidate}>
-            <div className={styles.uiCandidateTop}>
-              <div className={styles.uiPerson}>
-                <span className={styles.uiAvatar}>{c.initials}</span>
-                <div>
-                  <p className={styles.uiRowTitle}>{c.name}</p>
-                  <p className={styles.uiRowMeta}>{c.role}</p>
-                </div>
-              </div>
-              <div className={styles.uiMatchPill}>
-                <MatchRing value={c.match} size={36} />
-                <div>
-                  <strong>{c.match}%</strong>
-                  <span>соответствие</span>
-                </div>
-              </div>
-            </div>
-            <SkillChips skills={c.skills} />
-            <div className={styles.uiCandidateFoot}>
-              <div className={styles.uiBadgeRow}>
-                {c.badges.map((b) => (
-                  <span key={b} className={b === 'ФСП' ? styles.uiBadgeOk : styles.uiBadgeAccent}>
-                    {b}
-                  </span>
-                ))}
-              </div>
-              <p className={styles.uiRowMeta}>{c.reason}</p>
-            </div>
-          </article>
+    <div className={styles.demo}>
+      <p className={styles.demoEyebrow}>Вакансия</p>
+      <p className={styles.demoTitle}>Старший инженер бэкенда</p>
+      <p className={styles.demoMeta}>ООО «Сигнал» · удалённо · полная занятость</p>
+      <p className={styles.demoPay}>280–350 тыс ₽</p>
+      <div className={styles.uiSkills}>
+        {['Go', 'PostgreSQL', 'Kafka'].map((s) => (
+          <span key={s} className={styles.uiSkill}>
+            {s}
+          </span>
         ))}
       </div>
-    </>
+      <div className={styles.demoVacancyFoot}>
+        <span className={styles.uiBadgeAccent}>Уровень: старший</span>
+        <span className={styles.demoMeta}>Вилка видна до контактов</span>
+      </div>
+    </div>
   );
+}
+
+function DemoFsp() {
+  return (
+    <div className={styles.demo}>
+      <p className={styles.demoEyebrow}>Достижения ФСП</p>
+      <p className={styles.demoTitle}>Не путаем с самооценкой</p>
+      <div className={styles.demoList}>
+        {[
+          { title: 'Олимпиада ФСП', meta: 'Алгоритмы · топ-10%', ok: true },
+          { title: 'Рейтинг дисциплины', meta: 'Активен · 2025', ok: true },
+          { title: 'Kafka в резюме', meta: 'Заявлено кандидатом', ok: false },
+        ].map((row) => (
+          <div key={row.title} className={styles.demoListItem}>
+            <div>
+              <p className={styles.demoListTitle}>{row.title}</p>
+              <p className={styles.demoMeta}>{row.meta}</p>
+            </div>
+            <span className={row.ok ? styles.uiBadgeOk : styles.uiBadgeMute}>
+              {row.ok ? 'ФСП' : 'Заявлено'}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DemoTest() {
+  return (
+    <div className={styles.demo}>
+      <p className={styles.demoEyebrow}>Результат теста</p>
+      <div className={styles.demoMatchHead}>
+        <MatchRing value={82} />
+        <div>
+          <p className={styles.demoMatchValue}>82 / 100</p>
+          <p className={styles.demoMeta}>Уровень «средний» подтверждён</p>
+        </div>
+      </div>
+      <div className={styles.demoList}>
+        {[
+          ['Go', 'подтверждён'],
+          ['PostgreSQL', 'подтверждён'],
+          ['Kafka', 'не в тесте'],
+        ].map(([skill, status]) => (
+          <div key={skill} className={styles.demoListItem}>
+            <p className={styles.demoListTitle}>{skill}</p>
+            <span className={status === 'подтверждён' ? styles.uiBadgeOk : styles.uiBadgeMute}>
+              {status}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DemoOffer() {
+  return (
+    <div className={styles.demo}>
+      <p className={styles.demoEyebrow}>Предложение</p>
+      <p className={styles.demoTitle}>Старший бэкенд · 300 тыс ₽</p>
+      <p className={styles.demoMeta}>Удалённо · соответствие 92%</p>
+      <div className={styles.demoLock}>
+        <p className={styles.demoListTitle}>Контакты закрыты</p>
+        <p className={styles.demoMeta}>Почта и телеграм откроются только после согласия кандидата</p>
+      </div>
+      <div className={styles.demoActions}>
+        <span className={styles.uiBtnPrimary}>Принять</span>
+        <span className={styles.uiBtnGhost}>Отклонить</span>
+      </div>
+    </div>
+  );
+}
+
+function DemoCompare() {
+  return (
+    <div className={styles.demo}>
+      <p className={styles.demoEyebrow}>Сравнение кандидатов</p>
+      <div className={styles.demoCompare}>
+        {[
+          { name: 'Алина К.', score: 92, skills: 'Go · ФСП · тест' },
+          { name: 'Максим Р.', score: 84, skills: 'Python · тест' },
+        ].map((c) => (
+          <div key={c.name} className={styles.demoCompareCard}>
+            <p className={styles.demoListTitle}>{c.name}</p>
+            <p className={styles.demoMatchValue}>{c.score}%</p>
+            <p className={styles.demoMeta}>{c.skills}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function previewDemo(mode: FeaturesMode, stepId: string) {
+  if (mode === 'candidate') {
+    if (stepId === 'fsp') return <DemoFsp />;
+    if (stepId === 'tests') return <DemoTest />;
+    if (stepId === 'offers') return <DemoOffer />;
+    return <DemoPassport />;
+  }
+  if (stepId === 'vacancy') return <DemoVacancy />;
+  if (stepId === 'compare') return <DemoCompare />;
+  if (stepId === 'offer') return <DemoOffer />;
+  return <DemoMatch />;
 }
 
 function ProductPreview({
@@ -414,14 +274,7 @@ function ProductPreview({
   stepId?: string;
   compact?: boolean;
 }) {
-  const isCandidate = mode === 'candidate';
-  const nav = isCandidate ? CANDIDATE_NAV : EMPLOYER_NAV;
-  const activeNav =
-    (isCandidate ? CANDIDATE_NAV_BY_STEP[stepId ?? 'profile'] : EMPLOYER_NAV_BY_STEP[stepId ?? 'pool']) ?? 0;
-  const resolvedStep = stepId ?? (isCandidate ? 'profile' : 'pool');
-  const userName = isCandidate ? 'Алина К.' : 'ООО «Сигнал»';
-  const userRole = isCandidate ? 'Кандидат' : 'Работодатель';
-  const userInitials = isCandidate ? 'АК' : 'СР';
+  const resolvedStep = stepId ?? (mode === 'candidate' ? 'profile' : 'pool');
 
   return (
     <div
@@ -429,36 +282,8 @@ function ProductPreview({
       data-mode={mode}
       aria-hidden
     >
-      <aside className={styles.previewAside}>
-        <img src="/fsp-logo-dark.svg" alt="" className={styles.previewLogo} width={120} height={40} />
-        <nav className={styles.previewNav}>
-          {nav.map((label, i) => (
-            <div key={label} className={i === activeNav ? styles.previewNavActive : styles.previewNavItem}>
-              {label}
-            </div>
-          ))}
-        </nav>
-      </aside>
-
-      <div className={styles.previewChrome}>
-        <header className={styles.previewTopbar}>
-          <div className={styles.previewSearch}>Поиск по стеку, уровню, ФСП…</div>
-          <span className={styles.previewBell} />
-          <div className={styles.previewUser}>
-            <span className={styles.uiAvatar}>{userInitials}</span>
-            <div>
-              <strong>{userName}</strong>
-              <span>{userRole}</span>
-            </div>
-          </div>
-        </header>
-        <div className={styles.previewMain} key={`${mode}-${resolvedStep}`}>
-          {isCandidate ? (
-            <CandidatePreviewBody stepId={resolvedStep} />
-          ) : (
-            <EmployerPreviewBody stepId={resolvedStep} />
-          )}
-        </div>
+      <div className={styles.previewMain} key={`${mode}-${resolvedStep}`}>
+        {previewDemo(mode, resolvedStep)}
       </div>
     </div>
   );
@@ -646,15 +471,6 @@ function LandingShell() {
           </div>
 
           <div className={styles.heroInner}>
-            <img
-              src="/fsp-logo.svg"
-              alt="ФСП"
-              className={styles.heroLogo}
-              width={280}
-              height={96}
-              decoding="async"
-            />
-            <p className={styles.heroBrand}>{landingHero.brand}</p>
             <h1 id="landing-hero-heading" className={styles.heroTitle}>
               {landingHero.headline}
             </h1>
@@ -733,7 +549,7 @@ function LandingShell() {
         <section id={landingFeatures.id} className={`${styles.section} ${styles.sectionAlt}`} aria-labelledby="features-heading">
           <div className={styles.container}>
             <div className={styles.featuresLayout}>
-              <div className={styles.featuresSticky}>
+              <div className={styles.featuresIntro}>
                 <SectionLabel>{landingFeatures.label}</SectionLabel>
                 <h2 id="features-heading" className={styles.sectionTitle}>
                   {landingFeatures.title}
@@ -756,33 +572,29 @@ function LandingShell() {
                 </div>
 
                 <p className={styles.featuresSub}>{featureView.subtitle}</p>
-
-                <ol className={styles.stepList}>
-                  {featureView.steps.map((step) => (
-                    <li key={step.id}>
-                      <button
-                        type="button"
-                        className={`${styles.stepBtn} ${activeStepId === step.id ? styles.stepBtnActive : ''}`}
-                        onClick={() => setActiveStepId(step.id)}
-                      >
-                        <span className={styles.stepNum}>{step.number}</span>
-                        <span>
-                          <strong>{step.title}</strong>
-                          <em>{step.description}</em>
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ol>
               </div>
 
               <div className={styles.featuresPreview} aria-live="polite">
-                <p className={styles.previewCardLabel}>{activeStep.title}</p>
-                <p className={styles.featuresPreviewBody}>{activeStep.description}</p>
-                <div className={styles.miniPreview}>
-                  <ProductPreview compact mode={featureMode} stepId={activeStepId} />
-                </div>
+                <ProductPreview compact mode={featureMode} stepId={activeStepId} />
               </div>
+
+              <ol className={styles.stepList}>
+                {featureView.steps.map((step) => (
+                  <li key={step.id}>
+                    <button
+                      type="button"
+                      className={`${styles.stepBtn} ${activeStepId === step.id ? styles.stepBtnActive : ''}`}
+                      onClick={() => setActiveStepId(step.id)}
+                    >
+                      <span className={styles.stepNum}>{step.number}</span>
+                      <span>
+                        <strong>{step.title}</strong>
+                        <em>{step.description}</em>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
             </div>
           </div>
         </section>
@@ -822,7 +634,6 @@ function LandingShell() {
               </p>
               <p className={styles.footerTagline}>{landingFooter.tagline}</p>
               <p className={styles.footerDesc}>{landingFooter.description}</p>
-              <p className={styles.footerPillars}>{landingFooter.pillars}</p>
             </div>
 
             <div className={styles.footerCols}>
@@ -873,9 +684,6 @@ function LandingShell() {
           <div className={styles.footerBar}>
             <p className={styles.footerCopy}>{landingFooter.meta.copyright}</p>
             <p className={styles.footerNote}>{landingFooter.meta.note}</p>
-            <Link className={styles.footerBarLink} to="/ui-kit">
-              Дизайн-система
-            </Link>
           </div>
         </div>
       </footer>

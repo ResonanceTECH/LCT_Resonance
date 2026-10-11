@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { candidateApi } from '@/shared/api/endpoints';
 import { getErrorMessage } from '@/shared/api/errors';
+import { formatSpecialization } from '@/shared/lib/formatters';
 import {
   GRADE_OPTIONS,
   READINESS_OPTIONS,
@@ -110,7 +111,10 @@ export function CandidateProfileEditPage() {
         <div className="grid-2">
           <Select
             label="Специализация"
-            options={SPECIALIZATION_OPTIONS.map((s) => ({ value: s, label: s }))}
+            options={SPECIALIZATION_OPTIONS.map((s) => ({
+              value: s,
+              label: formatSpecialization(s),
+            }))}
             {...form.register('specialization')}
           />
           <Select label="Заявленный грейд" options={GRADE_OPTIONS} {...form.register('claimedGrade')} />

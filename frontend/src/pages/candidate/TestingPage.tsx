@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { candidateApi, testingApi } from '@/shared/api/endpoints';
 import { getErrorMessage } from '@/shared/api/errors';
-import { formatDateTime, formatGrade } from '@/shared/lib/formatters';
+import { formatDateTime, formatGrade, formatSpecialization } from '@/shared/lib/formatters';
 import { GRADE_OPTIONS, SPECIALIZATION_OPTIONS } from '@/shared/lib/labels';
 import { Badge, Button, Input, Select } from '@/shared/ui';
 
@@ -117,7 +117,10 @@ export function CandidateTestingPage() {
       >
         <Select
           label="Специализация"
-          options={SPECIALIZATION_OPTIONS.map((s) => ({ value: s, label: s }))}
+          options={SPECIALIZATION_OPTIONS.map((s) => ({
+            value: s,
+            label: formatSpecialization(s),
+          }))}
           {...form.register('specialization')}
         />
         <Input
@@ -140,7 +143,7 @@ export function CandidateTestingPage() {
         </Button>
         {hasPrevious ? (
           <p className="muted" style={{ marginBottom: 0 }}>
-            Повторный тест обновит актуальный результат в профиле. История сохраняется на Backend.
+            Повторный тест обновит актуальный результат в профиле. История сохраняется на сервере.
           </p>
         ) : null}
       </form>
