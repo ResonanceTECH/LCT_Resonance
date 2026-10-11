@@ -1,5 +1,5 @@
-import { Badge } from '@/shared/ui';
+import { uiStyles } from '@/shared/ui';
 
 export function SkillBadge({ skill }: { skill: string }) {
-  return <Badge tone="accent">{skill}</Badge>;
+  return <span className={uiStyles.skillChip}>{skill}</span>;
 }

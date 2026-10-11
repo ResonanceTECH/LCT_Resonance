@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import styles from './ui.module.css';
 import { Button } from './Button';
@@ -25,8 +26,8 @@ export function Modal({
       >
         <div className={styles.modalHeader}>
           <h2>{title}</h2>
-          <Button type="button" variant="ghost" onClick={onClose} aria-label="Закрыть">
-            ✕
+          <Button type="button" variant="ghost" size="sm" onClick={onClose} aria-label="Закрыть">
+            <X size={18} strokeWidth={1.75} />
           </Button>
         </div>
         {children}
