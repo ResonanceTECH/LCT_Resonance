@@ -31,7 +31,7 @@ cd backend
 cp .env.example .env   # заполните DATABASE_URL*, JWT_SECRET
 uv sync
 uv run alembic upgrade head
-uv run python -m app.seed
+uv run python -m app.seed --demo   # без --demo: справочники и админ из ADMIN_*
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
@@ -57,8 +57,9 @@ docker compose up -d --build
 | http://localhost:8025 | Mailpit: письма подтверждения почты |
 | http://localhost:8000 | backend напрямую |
 
-- Миграции применяются при каждом старте контейнера, демо-сиды — при `SEED_ON_START=true`
-  (по умолчанию; оба шага идемпотентны).
+- При каждом старте контейнера: миграции, справочники и банк вопросов, админ из `ADMIN_EMAIL` /
+  `ADMIN_PASSWORD`. Демо-аккаунты — только при `SEED_DEMO=true` (по умолчанию выключено).
+  Все шаги идемпотентны.
 - В compose `APP_ENV=prod`: токен подтверждения не отдаётся в ответе, письмо уходит в Mailpit.
   Для жюри задайте `SMTP_*` настоящего сервера в корневом `.env` — значения compose перекрывают
   `backend/.env`. На публичном стенде нужен HTTPS: refresh-cookie помечен `Secure`.
@@ -88,17 +89,23 @@ docker compose up -d --build
 | `STATIC_ITEM_MAX_EXPOSURES` | после стольких показов статический вопрос выходит из оборота |
 | `CONSENT_VERSION` | версия текста согласий |
 | `RATE_LIMIT_ENABLED` | лимиты на логин/регистрацию/письма/офферы |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | первый администратор: `python -m app.seed` создаёт его, если такого email ещё нет; пароль от 8 символов |
+| `SEED_DEMO` | только Docker: `true` — при старте загрузить демо-аккаунты (`seed --demo`) |
 | `LOG_LEVEL` | уровень JSON-логов `app.*` |
 
 Спецсимволы в пароле БД в URL — percent-encode (`!` → `%21`).
 
 ---
 
-## Seed (демо для FE и ручных проверок)
+## Seed
 
 ```bash
-uv run python -m app.seed   # повторно → SEED_SKIP already seeded
+uv run python -m app.seed          # справочники, банк вопросов, админ из ADMIN_EMAIL/ADMIN_PASSWORD
+uv run python -m app.seed --demo   # то же + демо-аккаунты и их данные
 ```
+
+Без `--demo` на стенде нет ни одного тестового пользователя — так стенд поднимается для
+реальной работы. Оба режима идемпотентны: повторный запуск пропускает то, что уже есть.
 
 Пароль всех демо-аккаунтов — `demo1234` (как в MSW-фикстурах фронта, только для демо-стенда).
 
@@ -235,7 +242,7 @@ uv run alembic revision --autogenerate -m "…"     # только осозна�
 До первого релиза схема живёт в одной миграции `0001_initial_schema`; новые изменения — отдельными
 ревизиями поверх неё. База, созданная до схлопывания миграций (в `alembic_version` старая
 ревизия), не обновится: пересоздайте её (`docker compose down -v` или `DROP DATABASE` +
-`CREATE DATABASE`), затем `alembic upgrade head && python -m app.seed`.
+`CREATE DATABASE`), затем `alembic upgrade head && python -m app.seed` (с `--demo` для демо-стенда).
 
 ---
 

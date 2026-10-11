@@ -6,6 +6,13 @@ import { LoginPage } from '@/pages/auth/LoginPage';
 import { renderWithProviders } from '@/test/test-utils';
 
 describe('LoginPage', () => {
+  it('starts empty: no demo credentials are filled in', () => {
+    renderWithProviders(<LoginPage />, { route: '/login' });
+
+    expect(screen.getByLabelText('Email')).toHaveValue('');
+    expect(screen.getByLabelText('Пароль')).toHaveValue('');
+  });
+
   it('logs candidate in and redirects to /candidate', async () => {
     const user = userEvent.setup();
     renderWithProviders(

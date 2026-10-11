@@ -45,7 +45,10 @@ services:
       SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-no-reply@resonance.local}
       SMTP_USE_SSL: ${SMTP_USE_SSL:-false}
       SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
-      SEED_ON_START: ${SEED_ON_START:-true}
+      # Reference data and the admin are loaded on every start; demo accounts only on request.
+      SEED_DEMO: ${SEED_DEMO:-false}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
     ports:
       - "8000:8000"

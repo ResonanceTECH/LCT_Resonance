@@ -1,7 +1,8 @@
-"""Static demo data for `python -m app.seed`.
+"""Static data for `python -m app.seed`.
 
-Demo accounts match the frontend MSW fixtures (`frontend/src/mocks/fixtures.ts`), so the
-same logins work against the real backend. The password is for the demo stand only.
+Reference data (specializations, grades, skills) is loaded on every stand. Everything
+from the employers on is demo data for `--demo` only: the accounts match the frontend MSW
+fixtures (`frontend/src/mocks/fixtures.ts`), and the password is for a demo stand only.
 """
 
 from __future__ import annotations
@@ -11,7 +12,7 @@ from dataclasses import dataclass
 from app.models.enums import OfferStatus, VacancyStatus
 
 DEMO_PASSWORD = "demo1234"
-ADMIN_EMAIL = "admin@demo.ru"
+DEMO_ADMIN_EMAIL = "admin@demo.ru"
 
 SPECIALIZATIONS = [
     ("frontend", "Frontend"),

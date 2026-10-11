@@ -54,7 +54,9 @@ docker compose up -d --build
 ```
 
 UI + API: [http://localhost:8080](http://localhost:8080) · Swagger: [http://localhost:8080/api/docs](http://localhost:8080/api/docs) · письма подтверждения: [http://localhost:8025](http://localhost:8025) (Mailpit).
-Миграции и демо-сиды применяются при старте backend. Подробности (prod-режим, SMTP, лимиты) — в [`backend/README.md`](./backend/README.md).
+При старте backend применяются миграции и справочники (специализации, грейды, навыки, вопросы тестов);
+администратор создаётся из `ADMIN_EMAIL` / `ADMIN_PASSWORD`. Демо-аккаунтов по умолчанию нет — для демо-стенда
+`SEED_DEMO=true` в корневом `.env`. Подробности (prod-режим, SMTP, лимиты) — в [`backend/README.md`](./backend/README.md).
 
 ### 2.2. Локально: Backend + Frontend
 
@@ -63,7 +65,7 @@ UI + API: [http://localhost:8080](http://localhost:8080) · Swagger: [http://loc
 cd backend
 uv sync
 uv run alembic upgrade head
-uv run python -m app.seed
+uv run python -m app.seed --demo   # без --demo: только справочники и админ из ADMIN_*
 uv run uvicorn app.main:app --reload --port 8000
 
 # frontend (в другом терминале): Vite проксирует /api на :8000
@@ -83,7 +85,8 @@ VITE_USE_MOCKS=true npm run dev
 
 ### 2.4. Демо-аккаунты
 
-Одинаковые для моков и для реального Backend, пароль `demo1234` (только для демо-стенда):
+Есть в моках и на backend после `python -m app.seed --demo` (в Docker — `SEED_DEMO=true`), пароль `demo1234`.
+На обычном стенде их нет: войдите администратором из `ADMIN_EMAIL` или зарегистрируйтесь.
 
 
 | Роль      | Email               | Профиль                                      |
@@ -190,7 +193,8 @@ Access token живёт 8 часов (у фронта нет refresh), пере�
 ## 7. База данных
 
 - PostgreSQL 16 (compose) или локальный инстанс; миграции Alembic (`uv run alembic upgrade head`, проверка рассинхрона моделей — `uv run alembic check`).
-- Сиды: `uv run python -m app.seed` (идемпотентно: повтор → `SEED_SKIP`).
+- Сиды: `uv run python -m app.seed` — справочники, банк вопросов и админ из `ADMIN_EMAIL`/`ADMIN_PASSWORD`;
+  `--demo` добавляет демо-аккаунты. Идемпотентно: существующее пропускается.
 - Основные таблицы: `users`, `candidate_profiles`, `companies`, `vacancies`, `offers`, `fsp_*`, `test_*`, `notifications`, `shortlist_items`, `applications`, `saved_vacancies`, `consents`, taxonomy.
 
 ---
@@ -226,15 +230,16 @@ npm run lint
 ```bash
 uv sync
 uv run alembic upgrade head
-uv run python -m app.seed
+uv run python -m app.seed --demo
 uv run uvicorn app.main:app --reload --port 8000
 uv run pytest tests/unit -q          # без БД
-uv run pytest tests/integration -q   # нужен мигрированный и засиженный Postgres
+uv run pytest tests/integration -q   # нужен Postgres после upgrade head и seed --demo
 ```
 
 ### Compose
 
 ```bash
-docker compose up -d --build      # миграции и сиды — при старте backend
+docker compose up -d --build      # миграции, справочники и админ — при старте backend
+SEED_DEMO=true docker compose up -d   # то же + демо-аккаунты
 docker compose logs -f backend
 ```

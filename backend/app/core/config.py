@@ -52,6 +52,9 @@ class Settings(BaseSettings):
     # A static question leaves rotation after this many shows (exposure control).
     static_item_max_exposures: int = Field(200, alias="STATIC_ITEM_MAX_EXPOSURES", ge=1)
     consent_version: str = Field("2026-10-01", alias="CONSENT_VERSION")
+    # The first administrator, created by `python -m app.seed` if no account has this email.
+    admin_email: str = Field("", alias="ADMIN_EMAIL")
+    admin_password: str = Field("", alias="ADMIN_PASSWORD")
     rate_limit_enabled: bool = Field(True, alias="RATE_LIMIT_ENABLED")
 
     @property

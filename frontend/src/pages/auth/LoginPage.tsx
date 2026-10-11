@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { roleHome, useAuth } from '@/features/auth/AuthContext';
 import { getErrorMessage } from '@/shared/api/errors';
+import { env } from '@/shared/config/env';
 import { AuthVisual } from '@/pages/auth/AuthVisual';
 import { Button, Checkbox, Input } from '@/shared/ui';
 
@@ -23,7 +24,7 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: 'candidate@demo.ru', password: 'demo1234', remember: true },
+    defaultValues: { email: '', password: '', remember: true },
   });
 
   return (
@@ -78,9 +79,12 @@ export function LoginPage() {
           <p className="auth-footer">
             Нет аккаунта? <Link to="/register">Регистрация</Link>
           </p>
-          <div className="demo-hint">
-            Demo: candidate@demo.ru · employer@demo.ru · admin@demo.ru · пароль demo1234
-          </div>
+          {/* Demo accounts exist in the mocks; a real stand has them only after `seed --demo`. */}
+          {env.useMocks ? (
+            <div className="demo-hint">
+              Demo: candidate@demo.ru · employer@demo.ru · admin@demo.ru · пароль demo1234
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

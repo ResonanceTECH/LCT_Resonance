@@ -167,7 +167,7 @@ export const landingFooter = {
         { label: 'Возможности', href: '#features' },
         { label: 'Начать', to: '/register' },
         { label: 'Демовход', to: '/login' },
-      ] satisfies FooterLink[],
+      ] satisfies FooterLink[] as FooterLink[],
     },
     {
       title: 'Роли',
@@ -175,7 +175,7 @@ export const landingFooter = {
         { label: 'Кандидат', href: '#roles' },
         { label: 'Работодатель', href: '#roles' },
         { label: 'Карьерный паспорт', to: '/p/passport-cand-1' },
-      ] satisfies FooterLink[],
+      ] satisfies FooterLink[] as FooterLink[],
     },
     {
       title: 'Ресурсы',
@@ -183,7 +183,7 @@ export const landingFooter = {
         { label: 'Дизайн-система', to: '/ui-kit' },
         { label: 'Брендбук ФСП', href: 'https://fsp-russia.ru/press/brandbook/', external: true },
         { label: 'Сайт ФСП', href: 'https://fsp-russia.ru/', external: true },
-      ] satisfies FooterLink[],
+      ] satisfies FooterLink[] as FooterLink[],
     },
   ],
   meta: {

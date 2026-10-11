@@ -1,6 +1,6 @@
-"""Integration fixtures: a live Postgres from DATABASE_URL, migrated and seeded.
+"""Integration fixtures: a live Postgres from DATABASE_URL, migrated and seeded with demo data.
 
-    uv run alembic upgrade head && uv run python -m app.seed
+    uv run alembic upgrade head && uv run python -m app.seed --demo
     uv run pytest tests/integration -q
 
 Tests skip (not fail) when the database is unreachable or not seeded.
@@ -17,7 +17,8 @@ from sqlalchemy.exc import DBAPIError, OperationalError
 
 from app.db.session import SessionLocal, engine
 from app.main import app
-from app.models.taxonomy import Specialization
+from app.models.user import User
+from app.seed.data import DEMO_ADMIN_EMAIL
 
 
 @pytest.fixture
@@ -25,8 +26,9 @@ async def client() -> AsyncIterator[AsyncClient]:
     try:
         async with SessionLocal() as db:
             await db.execute(text("SELECT 1"))
-            if (await db.execute(select(Specialization.id).limit(1))).first() is None:
-                pytest.skip("database is not seeded: run `python -m app.seed`")
+            demo_admin = select(User.id).where(User.email == DEMO_ADMIN_EMAIL)
+            if (await db.execute(demo_admin)).first() is None:
+                pytest.skip("no demo data: run `python -m app.seed --demo`")
     except (OSError, OperationalError, DBAPIError):
         pytest.skip("Postgres from DATABASE_URL is not reachable")
 

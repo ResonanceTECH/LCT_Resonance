@@ -1,13 +1,22 @@
-"""Demo data: `python -m app.seed`. Idempotent: a second run prints SEED_SKIP."""
+"""Database seeding.
+
+    python -m app.seed          reference data: specializations, grades, skills and the test
+                                question bank, plus the administrator from ADMIN_EMAIL and
+                                ADMIN_PASSWORD. Needed on every stand, real or demo.
+    python -m app.seed --demo   the same plus demo accounts and their data (demo1234).
+
+Idempotent: whatever already exists is skipped, so it is safe to run on every start.
+"""
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import random
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -50,8 +59,8 @@ class _Seeder:
         self.db = db
         self.rng = random.Random(RNG_SEED)
         self.now = datetime.now(UTC)
-        # One Argon2 hash for every demo account: hashing is deliberately slow.
-        self.password_hash = hash_password(data.DEMO_PASSWORD)
+        # Set by demo(): one Argon2 hash for every demo account, hashing is deliberately slow.
+        self.password_hash = ""
         self.specs: dict[str, Specialization] = {}
         self.grades: dict[str, Grade] = {}
         self.skills: dict[str, Skill] = {}
@@ -105,8 +114,66 @@ class _Seeder:
                 for q in questions
             )
 
+    async def _load_taxonomy(self) -> None:
+        self.specs = {s.slug: s for s in await self.db.scalars(select(Specialization))}
+        self.grades = {g.code: g for g in await self.db.scalars(select(Grade))}
+        self.skills = {s.slug: s for s in await self.db.scalars(select(Skill))}
+
+    async def reference(self) -> bool:
+        """Taxonomy and the question bank. False if they are already there."""
+        if (await self.db.execute(select(Specialization.id).limit(1))).first():
+            await self._load_taxonomy()
+            return False
+        self.taxonomy()
+        await self.db.flush()
+        self.questions()
+        return True
+
+    async def admin(self, email: str, password: str) -> str:
+        """The first administrator: without it nobody can open the admin panel."""
+        email = email.strip().lower()
+        if not email:
+            return "skipped: ADMIN_EMAIL is not set"
+        existing = (
+            await self.db.execute(select(User).where(func.lower(User.email) == email))
+        ).scalar_one_or_none()
+        if existing is not None:
+            if existing.role != UserRole.admin.value:
+                return f"WARNING: {email} already belongs to a {existing.role}, not an admin"
+            return f"{email} exists"
+        # Same rule as registration; a weak admin password is worse than no admin.
+        if len(password) < 8:
+            return "WARNING: not created, ADMIN_PASSWORD must be at least 8 characters"
+        self.db.add(
+            User(
+                id=uuid.uuid4(),
+                email=email,
+                password_hash=hash_password(password),
+                display_name="Администратор",
+                role=UserRole.admin.value,
+                email_verified_at=self.now,
+            )
+        )
+        return f"{email} created"
+
+    async def demo(self) -> bool:
+        """Demo accounts and everything around them. False if they are already there."""
+        demo_admin = select(User.id).where(User.email == data.DEMO_ADMIN_EMAIL)
+        if (await self.db.execute(demo_admin)).first():
+            return False
+        self.password_hash = hash_password(data.DEMO_PASSWORD)
+        self.employers()
+        await self.db.flush()  # users first: everything below references them
+        self.candidates()
+        self.vacancies()
+        await self.db.flush()
+        await self.after_profiles()
+        self.offers()
+        self.engagement()
+        return True
+
     def employers(self) -> None:
-        self._user(data.ADMIN_EMAIL, UserRole.admin, "Админ Resonance")
+        self._user(data.DEMO_ADMIN_EMAIL, UserRole.admin, "Админ Resonance")
         for employer in data.EMPLOYERS:
             user = self._user(employer.email, UserRole.employer, employer.display_name)
             company = Company(
@@ -361,32 +428,37 @@ class _Seeder:
                 )
 
 
-async def seed() -> None:
+async def seed(*, demo: bool = False) -> None:
+    settings = get_settings()
     async with SessionLocal() as db:
-        if (await db.execute(select(Specialization.id).limit(1))).first():
-            print("SEED_SKIP already seeded")
-            return
-
         seeder = _Seeder(db)
-        seeder.taxonomy()
-        seeder.employers()
-        await db.flush()  # users and taxonomy first: everything below references them
-        seeder.questions()
-        seeder.candidates()
-        seeder.vacancies()
-        await db.flush()
-        await seeder.after_profiles()
-        seeder.offers()
-        seeder.engagement()
+        reference = await seeder.reference()
+        admin = await seeder.admin(settings.admin_email, settings.admin_password)
+        demo_created = await seeder.demo() if demo else False
         await db.commit()
-    print(
-        f"SEED_OK accounts={len(seeder.users)} vacancies={len(seeder.vacancy_index)} "
-        f"password={data.DEMO_PASSWORD}"
-    )
+    print(f"SEED reference: {'created' if reference else 'exists'}")
+    print(f"SEED admin: {admin}")
+    if not demo:
+        print("SEED demo: off (python -m app.seed --demo)")
+    elif demo_created:
+        print(
+            f"SEED demo: created accounts={len(seeder.users)} "
+            f"vacancies={len(seeder.vacancy_index)} password={data.DEMO_PASSWORD}"
+        )
+    else:
+        print("SEED demo: exists")
 
 
 def main() -> None:
-    asyncio.run(seed())
+    parser = argparse.ArgumentParser(
+        prog="python -m app.seed",
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--demo", action="store_true", help="also load demo accounts and data (demo1234)"
+    )
+    asyncio.run(seed(demo=parser.parse_args().demo))
 
 
 if __name__ == "__main__":

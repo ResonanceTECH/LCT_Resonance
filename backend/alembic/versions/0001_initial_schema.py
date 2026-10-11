@@ -1,7 +1,7 @@
 """Initial schema: every table of the MVP in one migration.
 
 The project has no production data yet, so the schema is created from scratch rather
-than replayed through incremental changes. Demo data: `python -m app.seed`.
+than replayed through incremental changes. Data: `python -m app.seed [--demo]`.
 
 Revision ID: 0001
 Revises:

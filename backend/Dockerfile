@@ -23,7 +23,7 @@ USER resonance
 
 EXPOSE 8000
 
-# Migrations are idempotent and run on every start; SEED_ON_START=true also loads the
-# demo data (idempotent too). --proxy-headers takes the client address from nginx's
-# X-Forwarded-For, which the per-IP rate limits depend on.
-CMD ["sh", "-c", "alembic upgrade head && if [ \"$SEED_ON_START\" = \"true\" ]; then python -m app.seed; fi && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=\"${FORWARDED_ALLOW_IPS:-*}\""]
+# Every start (all steps idempotent): migrations, then reference data and the admin from
+# ADMIN_EMAIL/ADMIN_PASSWORD; SEED_DEMO=true adds demo accounts. --proxy-headers takes the
+# client address from nginx's X-Forwarded-For, which the per-IP rate limits depend on.
+CMD ["sh", "-c", "alembic upgrade head && if [ \"$SEED_DEMO\" = \"true\" ]; then python -m app.seed --demo; else python -m app.seed; fi && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=\"${FORWARDED_ALLOW_IPS:-*}\""]
