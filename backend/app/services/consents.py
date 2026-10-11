@@ -21,6 +21,7 @@ from app.schemas.consent import ConsentChange, ConsentOut
 from app.services.audit import write_audit
 
 _REQUIRED_MESSAGES = {
+    ConsentType.terms: "Нужно принять Условия использования",
     ConsentType.personal_data: "Нужно согласие на обработку персональных данных",
     ConsentType.profile_publication: "Нужно согласие на публикацию профиля",
     ConsentType.fsp_sync: "Дайте согласие на получение данных из реестра ФСП",

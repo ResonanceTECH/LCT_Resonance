@@ -74,6 +74,7 @@ class OfferStatus(str, enum.Enum):
 
 
 class ConsentType(str, enum.Enum):
+    terms = "terms"
     personal_data = "personal_data"
     profile_publication = "profile_publication"
     fsp_sync = "fsp_sync"

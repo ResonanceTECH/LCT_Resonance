@@ -21,6 +21,8 @@ from app.models.candidate import CandidateProfile
 from app.models.enums import Readiness, UserRole, UserStatus
 from app.models.user import AuthSession, EmailVerificationToken, User
 from app.schemas.auth import AuthUserOut
+from app.schemas.consent import ConsentChange
+from app.services import consents as consents_service
 from app.services import taxonomy
 from app.services.audit import write_audit
 

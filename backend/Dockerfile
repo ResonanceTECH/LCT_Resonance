@@ -24,6 +24,7 @@ USER resonance
 EXPOSE 8000
 
 # Migrations are idempotent and run on every start; SEED_ON_START=true also loads the
-# demo data (idempotent too). --proxy-headers takes the client address from nginx's
-# X-Forwarded-For, which the per-IP rate limits depend on.
-CMD ["sh", "-c", "alembic upgrade head && if [ \"$SEED_ON_START\" = \"true\" ]; then python -m app.seed; fi && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=\"${FORWARDED_ALLOW_IPS:-*}\""]
+# demo data (idempotent too). --proxy-headers takes the client address from nginx /
+# Vercel / Render X-Forwarded-For, which the per-IP rate limits depend on.
+# PORT is set by Render; local/compose default to 8000.
+CMD ["sh", "-c", "alembic upgrade head && if [ \"$SEED_ON_START\" = \"true\" ]; then python -m app.seed; fi && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips=\"${FORWARDED_ALLOW_IPS:-*}\""]

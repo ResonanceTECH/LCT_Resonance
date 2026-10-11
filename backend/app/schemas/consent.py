@@ -7,7 +7,7 @@ from pydantic import Field, field_validator
 
 from app.schemas.common import ApiModel
 
-ConsentTypeValue = Literal["personal_data", "profile_publication", "fsp_sync"]
+ConsentTypeValue = Literal["terms", "personal_data", "profile_publication", "fsp_sync"]
 
 
 class ConsentOut(ApiModel):
@@ -27,7 +27,7 @@ class ConsentChange(ApiModel):
 
 
 class ConsentsUpdate(ApiModel):
-    consents: list[ConsentChange] = Field(min_length=1, max_length=3)
+    consents: list[ConsentChange] = Field(min_length=1, max_length=4)
 
     @field_validator("consents")
     @classmethod
