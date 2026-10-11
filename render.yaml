@@ -1,0 +1,70 @@
+# Render Blueprint: Backend (FastAPI) → https://dashboard.render.com
+# Neon = Postgres only. Set DATABASE_URL* from the Neon console (see comments).
+#
+# After first deploy:
+# 1. Copy the service URL (https://lct-resonance-api.onrender.com)
+# 2. Deploy frontend on Vercel with rewrite to that URL (frontend/vercel.json)
+# 3. Set PUBLIC_APP_URL + CORS_ORIGINS to the Vercel URL, PUBLIC_API_URL to the
+#    Vercel origin (so /api/* rewrite keeps email verify + cookies on one host)
+
+services:
+  - type: web
+    name: lct-resonance-api
+    runtime: docker
+    plan: free
+    # Neon project is us-east-2; ohio keeps DB RTT lower than EU.
+    region: ohio
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health/live
+    envVars:
+      - key: APP_ENV
+        value: prod
+      - key: LOG_LEVEL
+        value: INFO
+      - key: PORT
+        value: "8000"
+      - key: SEED_ON_START
+        value: "true"
+      - key: MATCHER_PROVIDER
+        value: baseline
+      - key: FSP_PROVIDER
+        value: mock
+      - key: RATE_LIMIT_ENABLED
+        value: "true"
+      # Render generates a long random secret (satisfies JWT_SECRET min length).
+      - key: JWT_SECRET
+        generateValue: true
+      # Neon pooled URL → SQLAlchemy async. Prefer:
+      #   postgresql+asyncpg://USER:PASS@HOST-pooler/.../neondb?ssl=require
+      # Plain postgresql:// from Neon also works: the app rewrites the driver.
+      - key: DATABASE_URL
+        sync: false
+      # Neon unpooled (direct) URL for Alembic / sync engine:
+      #   postgresql+psycopg://USER:PASS@HOST/.../neondb?sslmode=require
+      # Or set DATABASE_URL_UNPOOLED — the app maps it to DATABASE_URL_SYNC.
+      - key: DATABASE_URL_SYNC
+        sync: false
+      - key: DATABASE_URL_UNPOOLED
+        sync: false
+      # Fill after Vercel deploy, e.g. https://lct-resonance.vercel.app
+      - key: PUBLIC_APP_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      # Prefer the Vercel origin (rewrite /api). Until then, use this service URL.
+      - key: PUBLIC_API_URL
+        sync: false
+      # Optional: registration returns 503 in prod without SMTP.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_EMAIL
+        sync: false
+      - key: SMTP_STARTTLS
+        value: "true"

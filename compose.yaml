@@ -25,6 +25,24 @@ services:
       - "8025:8025"
       - "1025:1025"
 
+  # Optional explainable matcher (ML.md). Default MATCHER_PROVIDER=baseline keeps demos
+  # offline-safe; set MATCHER_PROVIDER=ml to route ranking through this service.
+  ml:
+    build:
+      context: ./ml
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8001/health', timeout=3)"
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
+
   backend:
     build:
       context: ./backend
@@ -47,12 +65,17 @@ services:
       SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
       SEED_ON_START: ${SEED_ON_START:-true}
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      MATCHER_PROVIDER: ${MATCHER_PROVIDER:-baseline}
+      ML_MATCHER_URL: ${ML_MATCHER_URL:-http://ml:8001}
+      ML_TIMEOUT_SEC: ${ML_TIMEOUT_SEC:-2}
     ports:
       - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
       mailpit:
+        condition: service_started
+      ml:
         condition: service_started
     healthcheck:
       test:
