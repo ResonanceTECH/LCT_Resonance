@@ -57,18 +57,18 @@ const NAV = [
 ] as const;
 
 const COLORS = [
-  { name: 'ink', value: '#14201c', varName: '--ink' },
-  { name: 'ink-muted', value: '#5a655f', varName: '--ink-muted' },
-  { name: 'surface', value: '#f4f0e8', varName: '--surface' },
-  { name: 'surface-2', value: '#ebe4d6', varName: '--surface-2' },
-  { name: 'accent', value: '#0d7a5f', varName: '--accent' },
-  { name: 'accent-soft', value: '#d7efe6', varName: '--accent-soft' },
-  { name: 'accent-ink', value: '#064c3b', varName: '--accent-ink' },
-  { name: 'success', value: '#0f766e', varName: '--success' },
-  { name: 'warn', value: '#b45309', varName: '--warn' },
-  { name: 'danger', value: '#b42318', varName: '--danger' },
-  { name: 'fsp', value: '#1d4ed8', varName: '--fsp' },
-  { name: 'fsp-soft', value: '#dbeafe', varName: '--fsp-soft' },
+  { name: 'brand-primary', value: '#402FFF', varName: '--brand-primary' },
+  { name: 'brand-red', value: '#EC1D35', varName: '--brand-red' },
+  { name: 'background-page', value: '#F7F7FA', varName: '--background-page' },
+  { name: 'background-card', value: '#FFFFFF', varName: '--background-card' },
+  { name: 'text-primary', value: '#1B1C21', varName: '--text-primary' },
+  { name: 'text-secondary', value: '#565966', varName: '--text-secondary' },
+  { name: 'primary-50', value: '#F2F0FF', varName: '--primary-50' },
+  { name: 'primary-600', value: '#3324E6', varName: '--primary-600' },
+  { name: 'success-main', value: '#16834A', varName: '--success-main' },
+  { name: 'warning-main', value: '#A9650C', varName: '--warning-main' },
+  { name: 'error-main', value: '#D8273C', varName: '--error-main' },
+  { name: 'info-main', value: '#2764C5', varName: '--info-main' },
 ] as const;
 
 function Section({
@@ -143,7 +143,7 @@ export function UiKitPage() {
     <div className={styles.page} data-testid="ui-kit-page">
       <header className={styles.topbar}>
         <div className={styles.brandBlock}>
-          <div className={styles.brand}>LCT Resonance · UI Kit</div>
+          <div className={styles.brand}>FSP Talent · UI Kit</div>
           <p className={styles.brandMeta}>Living style guide · tokens · shared · domain</p>
         </div>
         <div className={styles.topActions}>
@@ -277,23 +277,19 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
             </div>
           </Section>
 
-          <Section id="typography" title="Typography" hint="App: Instrument Serif + DM Sans · Landing: Syne + Manrope">
+          <Section id="typography" title="Typography" hint="JetBrains Mono (H1–H3, KPI) · Golos Text (UI body)">
             <Canvas label="Type scale">
               <div className={styles.typeSample}>
-                <p className={styles.displaySample}>Instrument Serif — display</p>
-                <p className={styles.typeMeta}>h1–h3 · match score · brand in app</p>
+                <p className={styles.displaySample}>JetBrains Mono — display</p>
+                <p className={styles.typeMeta}>h1–h3 · KPI · brand · landing hero</p>
               </div>
               <div className={styles.typeSample}>
-                <p className={styles.syneSample}>Syne 800 — landing display</p>
-                <p className={styles.typeMeta}>landing hero / section titles only</p>
-              </div>
-              <div className={styles.typeSample}>
-                <p className={styles.bodySample}>DM Sans — body UI. Кандидат с ФСП. Match Score. Контакты после accept.</p>
-                <p className={styles.typeMeta}>1rem / 1.5 · controls · labels</p>
+                <p className={styles.bodySample}>Golos Text — body UI. Кандидат с ФСП. Match Score. Контакты после accept.</p>
+                <p className={styles.typeMeta}>14px / 22 · controls · labels · descriptions</p>
               </div>
               <div className={styles.typeSample}>
                 <p className={styles.mutedSample}>muted — вторичный текст, подсказки, метаданные</p>
-                <p className={styles.typeMeta}>color: var(--ink-muted)</p>
+                <p className={styles.typeMeta}>color: var(--text-secondary)</p>
               </div>
             </Canvas>
           </Section>
@@ -547,31 +543,35 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
             </Canvas>
           </Section>
 
-          <Section id="landing" title="Landing surface" hint="Отдельная палитра · LandingPage.module.css · не мешать с app chrome">
+          <Section id="landing" title="Landing surface" hint="FSP Minimal Tech · shared tokens · LandingPage.module.css">
             <div className={styles.landingStrip}>
               <div className={styles.landingLight}>
                 <div>
-                  <p className={styles.landingBrand}>Resonance</p>
-                  <p style={{ margin: '0.5rem 0 0', opacity: 0.75 }}>Light theme · #f7f5f0</p>
+                  <p className={styles.landingBrand}>FSP Talent</p>
+                  <p style={{ margin: '0.5rem 0 0', opacity: 0.75 }}>
+                    Page #F7F7FA · Primary #402FFF · JetBrains Mono
+                  </p>
                 </div>
                 <div className={styles.landingCtas}>
                   <span className={styles.lBtnPrimary}>Начать</span>
                   <span className={styles.lBtnSecondary}>Demo-вход</span>
                 </div>
               </div>
-              <div className={styles.landingDark}>
+              <div className={styles.landingHero}>
                 <div>
-                  <p className={styles.landingBrand}>Resonance</p>
-                  <p style={{ margin: '0.5rem 0 0', opacity: 0.7 }}>Dark theme · #0e1612</p>
+                  <p className={styles.landingBrand}>FSP Talent</p>
+                  <p style={{ margin: '0.5rem 0 0', opacity: 0.75 }}>
+                    Full-bleed hero · brand first · no cards in first viewport
+                  </p>
                 </div>
                 <div className={styles.landingCtas}>
                   <span className={styles.lBtnPrimary}>Начать</span>
-                  <span className={styles.lBtnSecondary}>Demo-вход</span>
+                  <span className={styles.lBtnSecondaryGhost}>Demo-вход</span>
                 </div>
               </div>
             </div>
             <p className={styles.footerNote}>
-              Landing fonts: Syne + Manrope. Dock, bento, product peek, theme toggle — только на `/`.
+              Landing: sticky topbar 72px, bento 16px, buttons 12px / 44px. Без dark-theme toggle.
             </p>
           </Section>
 

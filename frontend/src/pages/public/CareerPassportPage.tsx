@@ -15,7 +15,7 @@ export function QrCode({ value, size = 140 }: { value: string; size?: number }) 
       value={value}
       size={size}
       marginSize={2}
-      fgColor="#14201c"
+      fgColor="#1B1C21"
       role="img"
       aria-label={`QR на публичный профиль: ${value}`}
       data-testid="passport-qr"
@@ -51,7 +51,7 @@ export function CareerPassportPage() {
   return (
     <div className="landing">
       <header className="topbar">
-        <div className="brand">LCT Resonance · Career Passport</div>
+        <div className="brand">FSP Talent · Career Passport</div>
         <FSPVerificationBadge label="Public profile" />
       </header>
       <main className="page stack">
