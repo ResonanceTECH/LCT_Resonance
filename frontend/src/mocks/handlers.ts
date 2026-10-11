@@ -116,6 +116,18 @@ export const handlers = [
   http.post(`${API}/auth/register`, async ({ request }) => {
     await delay(300);
     const body = (await request.json()) as RegisterPayload;
+    if (!body.termsAccepted) {
+      return HttpResponse.json(
+        { message: 'Необходимо принять Условия использования' },
+        { status: 422 },
+      );
+    }
+    if (!body.personalDataConsent) {
+      return HttpResponse.json(
+        { message: 'Необходимо дать согласие на обработку персональных данных' },
+        { status: 422 },
+      );
+    }
     if (users.some((u) => u.email === body.email)) {
       return HttpResponse.json({ message: 'Email уже зарегистрирован' }, { status: 409 });
     }
@@ -216,7 +228,7 @@ export const handlers = [
     const auth = requireUser(request);
     if ('error' in auth && auth.error) return auth.error;
     return HttpResponse.json(
-      (['personal_data', 'profile_publication', 'fsp_sync'] as const).map((type) => ({
+      (['terms', 'personal_data', 'profile_publication', 'fsp_sync'] as const).map((type) => ({
         type,
         accepted: true,
         version: '2026-10-01',

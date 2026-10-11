@@ -597,6 +597,38 @@ p {
   box-shadow: var(--shadow-card);
 }
 
+.auth-cardWide {
+  width: min(480px, 100%);
+}
+
+.auth-consents {
+  margin: 0;
+  padding: 14px 14px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--background-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-consentsLegend {
+  padding: 0 4px;
+  font-family: var(--display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.auth-consentError {
+  margin: -4px 0 0 28px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--error-main);
+}
+
 .auth-card h1 {
   font-size: 26px;
   line-height: 36px;

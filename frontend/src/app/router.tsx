@@ -25,6 +25,7 @@ import { EmployerOffersPage } from '@/pages/employer/OffersPage';
 import { EmployerShortlistPage } from '@/pages/employer/ShortlistPage';
 import { EmployerComparePage } from '@/pages/employer/ComparePage';
 import { CareerPassportPage } from '@/pages/public/CareerPassportPage';
+import { LegalPage } from '@/pages/public/LegalPage';
 import { UiKitPage } from '@/pages/public/UiKitPage';
 import { NotificationsPage } from '@/pages/shared/NotificationsPage';
 import { AdminOverviewPage } from '@/pages/admin/OverviewPage';
@@ -37,6 +38,8 @@ import { AdminCategoriesPage } from '@/pages/admin/CategoriesPage';
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
   { path: '/ui-kit', element: <UiKitPage /> },
+  { path: '/terms', element: <LegalPage slug="terms" /> },
+  { path: '/privacy', element: <LegalPage slug="privacy" /> },
   { path: '/p/:slug', element: <CareerPassportPage /> },
   {
     element: <GuestGuard />,

@@ -25,7 +25,7 @@ describe('EmployerDashboardPage advanced analytics', () => {
     expect(await screen.findByTestId('employer-analytics')).toBeInTheDocument();
     expect(screen.getByText(/Расширенная аналитика/)).toBeInTheDocument();
     expect(screen.getByText(/Воронка/)).toBeInTheDocument();
-    expect(screen.getByText(/Конверсия в shortlist/)).toBeInTheDocument();
+    expect(screen.getByText(/Конверсия в избранное/)).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByTestId('avg-match').textContent).toMatch(/%|—/);
     });

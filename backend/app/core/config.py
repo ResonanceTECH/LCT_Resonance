@@ -1,11 +1,52 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _BACKEND_ROOT = Path(__file__).resolve().parents[2]
 _ENV_FILE = _BACKEND_ROOT / ".env"
+
+
+def _strip_wrapping_quotes(value: str) -> str:
+    text = value.strip()
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in {"'", '"'}:
+        return text[1:-1]
+    return text
+
+
+def _to_sqlalchemy_url(url: str, driver: str) -> str:
+    """Accept Neon `postgresql://` URLs and rewrite for SQLAlchemy drivers.
+
+    - async → `postgresql+asyncpg://...?ssl=require`
+    - sync  → `postgresql+psycopg://...?sslmode=require`
+    Drops `channel_binding` (breaks some serverless drivers).
+
+    SSL is never forced: the URL's own `sslmode`/`ssl` is only renamed for the driver
+    (asyncpg takes `ssl`, psycopg takes `sslmode`). Neon URLs carry `sslmode=require`;
+    local and Docker Postgres run without SSL and would refuse a forced one.
+    """
+    text = _strip_wrapping_quotes(url)
+    if text.startswith("postgres://"):
+        text = "postgresql://" + text[len("postgres://") :]
+
+    prefix = f"postgresql+{driver}://"
+    if text.startswith(prefix):
+        pass
+    elif text.startswith("postgresql://"):
+        text = prefix + text[len("postgresql://") :]
+    else:
+        return text
+
+    parsed = urlparse(text)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    query.pop("channel_binding", None)
+    sslmode, ssl = query.pop("sslmode", None), query.pop("ssl", None)
+    if sslmode or ssl:
+        query["ssl" if driver == "asyncpg" else "sslmode"] = sslmode or ssl
+    return urlunparse(parsed._replace(query=urlencode(query)))
 
 
 class Settings(BaseSettings):
@@ -18,7 +59,9 @@ class Settings(BaseSettings):
     app_env: str = "dev"
     log_level: str = Field("INFO", alias="LOG_LEVEL")
     database_url: str = Field(..., alias="DATABASE_URL")
-    database_url_sync: str = Field(..., alias="DATABASE_URL_SYNC")
+    database_url_sync: str = Field("", alias="DATABASE_URL_SYNC")
+    # Neon console exposes this alongside the pooled DATABASE_URL; used when SYNC is unset.
+    database_url_unpooled: str = Field("", alias="DATABASE_URL_UNPOOLED")
     jwt_secret: str = Field(..., alias="JWT_SECRET", min_length=32)
     # 8 hours: the frontend keeps the access token and has no refresh flow (Backend.md).
     jwt_access_ttl_min: int = Field(480, alias="JWT_ACCESS_TTL_MIN")
@@ -56,6 +99,39 @@ class Settings(BaseSettings):
     admin_email: str = Field("", alias="ADMIN_EMAIL")
     admin_password: str = Field("", alias="ADMIN_PASSWORD")
     rate_limit_enabled: bool = Field(True, alias="RATE_LIMIT_ENABLED")
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_database_urls(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        values = dict(data)
+
+        async_raw = values.get("DATABASE_URL") or values.get("database_url")
+        sync_raw = values.get("DATABASE_URL_SYNC") or values.get("database_url_sync")
+        unpooled_raw = values.get("DATABASE_URL_UNPOOLED") or values.get(
+            "database_url_unpooled"
+        )
+
+        if async_raw:
+            values["DATABASE_URL"] = _to_sqlalchemy_url(str(async_raw), "asyncpg")
+
+        if sync_raw:
+            values["DATABASE_URL_SYNC"] = _to_sqlalchemy_url(str(sync_raw), "psycopg")
+        elif unpooled_raw:
+            values["DATABASE_URL_SYNC"] = _to_sqlalchemy_url(str(unpooled_raw), "psycopg")
+        elif async_raw:
+            values["DATABASE_URL_SYNC"] = _to_sqlalchemy_url(str(async_raw), "psycopg")
+
+        return values
+
+    @model_validator(mode="after")
+    def require_sync_database_url(self) -> "Settings":
+        if not self.database_url_sync:
+            raise ValueError(
+                "DATABASE_URL_SYNC is required (or set DATABASE_URL_UNPOOLED for Neon)"
+            )
+        return self
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -1,3 +1,10 @@
+import { privacyPolicy, type LegalBlock } from './privacyPolicy';
+import { termsOfUse } from './termsOfUse';
+
+export type { LegalBlock } from './privacyPolicy';
+export { privacyPolicy } from './privacyPolicy';
+export { termsOfUse } from './termsOfUse';
+
 export const landingHero = {
   brand: 'FSP Talent',
   brandTagline: 'Федерация спортивного программирования',
@@ -142,6 +149,50 @@ export const landingFeatures = {
   },
 };
 
+export const landingFaq = {
+  id: 'faq',
+  label: 'FAQ',
+  title: 'Вопросы и ответы',
+  items: [
+    {
+      id: 'diff',
+      question: 'Чем это отличается от обычного job board?',
+      answer:
+        'Сигнал строится на профиле, тестах и подтверждённых достижениях ФСП — не на «красивом» резюме. Работодатель видит оценку соответствия по конкретной вакансии.',
+    },
+    {
+      id: 'contacts',
+      question: 'Когда открываются контакты?',
+      answer:
+        'Только после согласия кандидата на предложение. До этого работодатель видит профиль и сигнал, но не телефон и не email.',
+    },
+    {
+      id: 'match',
+      question: 'Что такое оценка соответствия?',
+      answer:
+        'Число и причины совпадения стека, уровня и тестов с требованиями вакансии. Считается на бэкенде — UI только показывает DTO.',
+    },
+    {
+      id: 'fsp',
+      question: 'Обязателен ли аккаунт ФСП?',
+      answer:
+        'Нет. Можно собрать профиль и пройти тесты без ФСП. Достижения ФСП усиливают сигнал и отделены от самооценки навыков.',
+    },
+    {
+      id: 'offer',
+      question: 'Почему предложение идёт с вилкой зарплаты?',
+      answer:
+        'Чтобы кандидат видел условия до обмена контактами. Отклик — только через предложение: вилка и формат работы как часть сигнала.',
+    },
+    {
+      id: 'demo',
+      question: 'Можно ли посмотреть без регистрации?',
+      answer:
+        'Да — на лендинге есть превью продукта, а в форме входа лежат демоаккаунты кандидата и работодателя.',
+    },
+  ],
+};
+
 export const landingCta = {
   id: 'cta',
   title: 'Найм без холодных контактов',
@@ -149,11 +200,52 @@ export const landingCta = {
   cta: { label: 'Начать', to: '/register' },
 };
 
+export const legalPages: Record<
+  'terms' | 'privacy',
+  {
+    title: string;
+    version: string;
+    effectiveDate: string;
+    updated: string;
+    blocks: readonly LegalBlock[];
+  }
+> = {
+  terms: {
+    title: termsOfUse.title,
+    version: termsOfUse.version,
+    effectiveDate: termsOfUse.effectiveDate,
+    updated: termsOfUse.updated,
+    blocks: termsOfUse.blocks,
+  },
+  privacy: {
+    title: privacyPolicy.title,
+    version: privacyPolicy.version,
+    effectiveDate: privacyPolicy.effectiveDate,
+    updated: privacyPolicy.updated,
+    blocks: privacyPolicy.blocks,
+  },
+};
+
 export type FooterLink =
   | { label: string; to: string }
   | { label: string; href: string; external?: boolean };
 
-export const landingFooter = {
+export type FooterColumn = {
+  title: string;
+  links: FooterLink[];
+};
+
+export const landingFooter: {
+  brand: string;
+  tagline: string;
+  description: string;
+  columns: FooterColumn[];
+  meta: {
+    copyright: string;
+    notePrefix: string;
+    noteLink: { label: string; href: string };
+  };
+} = {
   brand: 'FSP Talent',
   tagline: 'Найм IT-специалистов с подтверждёнными компетенциями',
   description:
@@ -166,7 +258,7 @@ export const landingFooter = {
         { label: 'Возможности', href: '#features' },
         { label: 'Начать', to: '/register' },
         { label: 'Демовход', to: '/login' },
-      ] satisfies FooterLink[] as FooterLink[],
+      ],
     },
     {
       title: 'Роли',
@@ -174,7 +266,7 @@ export const landingFooter = {
         { label: 'Кандидат', href: '#roles' },
         { label: 'Работодатель', href: '#roles' },
         { label: 'Карьерный паспорт', to: '/p/passport-cand-1' },
-      ] satisfies FooterLink[] as FooterLink[],
+      ],
     },
     {
       title: 'Ресурсы',
@@ -182,11 +274,23 @@ export const landingFooter = {
         { label: 'Дизайн-система', to: '/ui-kit' },
         { label: 'Брендбук ФСП', href: 'https://fsp-russia.ru/press/brandbook/', external: true },
         { label: 'Сайт ФСП', href: 'https://fsp-russia.ru/', external: true },
-      ] satisfies FooterLink[] as FooterLink[],
+      ],
+    },
+    {
+      title: 'Документы',
+      links: [
+        { label: 'Вопросы и ответы', href: '#faq' },
+        { label: 'Условия использования', to: '/terms' },
+        { label: 'Политика конфиденциальности', to: '/privacy' },
+      ],
     },
   ],
   meta: {
     copyright: '© 2026 FSP Talent',
-    note: 'Разработано командой Резонанс',
+    notePrefix: 'Разработано командой',
+    noteLink: {
+      label: 'Резонанс',
+      href: 'https://github.com/ResonanceTECH',
+    },
   },
 };

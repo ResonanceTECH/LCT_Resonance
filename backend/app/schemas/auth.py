@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Literal
 from uuid import UUID
 
-from pydantic import EmailStr, Field
+from pydantic import EmailStr, Field, field_validator
 
 from app.schemas.common import ApiModel
 
@@ -15,6 +15,25 @@ class RegisterRequest(ApiModel):
     password: str = Field(min_length=8, max_length=128)
     role: Literal["candidate", "employer"]
     display_name: str = Field(min_length=2, max_length=255)
+    # Separate checkboxes (152-ФЗ): do not collapse terms + personal data into one.
+    terms_accepted: bool
+    personal_data_consent: bool
+    # Optional: career passport visibility for candidates.
+    public_passport_consent: bool = False
+
+    @field_validator("terms_accepted")
+    @classmethod
+    def _require_terms(cls, value: bool) -> bool:
+        if not value:
+            raise ValueError("Необходимо принять Условия использования")
+        return value
+
+    @field_validator("personal_data_consent")
+    @classmethod
+    def _require_personal_data(cls, value: bool) -> bool:
+        if not value:
+            raise ValueError("Необходимо дать согласие на обработку персональных данных")
+        return value
 
 
 class LoginRequest(ApiModel):

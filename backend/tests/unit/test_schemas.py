@@ -60,12 +60,44 @@ def test_profile_rejects_unknown_enum_values_and_nulls():
 def test_registration_needs_display_name_and_strong_enough_password():
     with pytest.raises(ValidationError):
         RegisterRequest(
-            email="a@example.com", password="1234567", role="candidate", displayName="Аня"
+            email="a@example.com",
+            password="1234567",
+            role="candidate",
+            displayName="Аня",
+            termsAccepted=True,
+            personalDataConsent=True,
         )
     ok = RegisterRequest(
-        email="a@example.com", password="12345678", role="employer", displayName="Аня"
+        email="a@example.com",
+        password="12345678",
+        role="employer",
+        displayName="Аня",
+        termsAccepted=True,
+        personalDataConsent=True,
     )
     assert ok.display_name == "Аня"
+    assert ok.public_passport_consent is False
+
+
+def test_registration_requires_separate_terms_and_personal_data_consents():
+    with pytest.raises(ValidationError):
+        RegisterRequest(
+            email="a@example.com",
+            password="12345678",
+            role="candidate",
+            displayName="Аня",
+            termsAccepted=False,
+            personalDataConsent=True,
+        )
+    with pytest.raises(ValidationError):
+        RegisterRequest(
+            email="a@example.com",
+            password="12345678",
+            role="candidate",
+            displayName="Аня",
+            termsAccepted=True,
+            personalDataConsent=False,
+        )
 
 
 def test_login_accepts_any_stored_address():

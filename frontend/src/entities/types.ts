@@ -16,6 +16,12 @@ export type RegisterPayload = {
   password: string;
   role: 'candidate' | 'employer';
   displayName: string;
+  /** Required: separate from personal-data consent (152-ФЗ). */
+  termsAccepted: boolean;
+  /** Required: consent to process personal data for stated purposes. */
+  personalDataConsent: boolean;
+  /** Optional: publish selected career-passport fields. */
+  publicPassportConsent?: boolean;
 };
 
 export type AuthResponse = {
@@ -209,7 +215,7 @@ export type ProfileCompleteness = {
   items: ProfileCompletenessItem[];
 };
 
-export type ConsentType = 'personal_data' | 'profile_publication' | 'fsp_sync';
+export type ConsentType = 'terms' | 'personal_data' | 'profile_publication' | 'fsp_sync';
 
 export type Consent = {
   type: ConsentType;

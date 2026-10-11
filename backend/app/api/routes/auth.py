@@ -72,6 +72,9 @@ async def register(
         password=payload.password,
         role=payload.role,
         display_name=payload.display_name,
+        terms_accepted=payload.terms_accepted,
+        personal_data_consent=payload.personal_data_consent,
+        public_passport_consent=payload.public_passport_consent,
     )
     await _send_verification_after_register(user.email, token)
     if get_settings().is_dev:

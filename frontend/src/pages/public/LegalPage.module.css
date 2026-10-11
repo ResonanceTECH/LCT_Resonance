@@ -1,0 +1,146 @@
+.page {
+  min-height: 100vh;
+  background: var(--background-page);
+  color: var(--text-primary);
+  font-family: var(--font);
+}
+
+.inner {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+}
+
+@media (min-width: 768px) {
+  .inner {
+    padding: 48px 24px 80px;
+  }
+}
+
+.back {
+  display: inline-flex;
+  margin-bottom: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brand-primary);
+  text-decoration: none;
+}
+
+.back:hover {
+  text-decoration: underline;
+}
+
+.meta {
+  margin: 0 0 8px;
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.title {
+  margin: 0 0 16px;
+  font-family: var(--display);
+  font-size: clamp(26px, 4vw, 34px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.crossLink {
+  margin: 0 0 32px;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--text-secondary);
+}
+
+.crossLink a {
+  color: var(--brand-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.crossLink a:hover {
+  text-decoration: underline;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.h2 {
+  margin: 28px 0 4px;
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 26px;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.h2:first-child {
+  margin-top: 0;
+}
+
+.h3 {
+  margin: 16px 0 0;
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 22px;
+  color: var(--text-primary);
+}
+
+.paragraph {
+  margin: 0;
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--text-secondary);
+}
+
+.list {
+  margin: 0;
+  padding: 0 0 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.list li {
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--text-secondary);
+}
+
+.defs {
+  margin: 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.defItem {
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--background-card);
+}
+
+.defItem dt {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  color: var(--text-primary);
+}
+
+.defItem dd {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--text-secondary);
+}

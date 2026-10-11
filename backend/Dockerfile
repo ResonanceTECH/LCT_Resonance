@@ -25,5 +25,6 @@ EXPOSE 8000
 
 # Every start (all steps idempotent): migrations, then reference data and the admin from
 # ADMIN_EMAIL/ADMIN_PASSWORD; SEED_DEMO=true adds demo accounts. --proxy-headers takes the
-# client address from nginx's X-Forwarded-For, which the per-IP rate limits depend on.
-CMD ["sh", "-c", "alembic upgrade head && if [ \"$SEED_DEMO\" = \"true\" ]; then python -m app.seed --demo; else python -m app.seed; fi && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=\"${FORWARDED_ALLOW_IPS:-*}\""]
+# client address from nginx / Vercel / Render X-Forwarded-For, which the per-IP rate limits
+# depend on. PORT is set by Render; local/compose default to 8000.
+CMD ["sh", "-c", "alembic upgrade head && if [ \"$SEED_DEMO\" = \"true\" ]; then python -m app.seed --demo; else python -m app.seed; fi && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips=\"${FORWARDED_ALLOW_IPS:-*}\""]

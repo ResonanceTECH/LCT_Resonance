@@ -1,20 +1,26 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { roleHome, useAuth } from '@/features/auth/AuthContext';
-import { Loader } from '@/shared/ui';
+import { Accordion, Loader } from '@/shared/ui';
 import {
   landingCta,
   landingDock,
+  landingFaq,
   landingFeatures,
   landingFooter,
   landingHero,
   landingHowItWorks,
   landingRoles,
   type FeaturesMode,
+  type FooterLink,
 } from '@/pages/landing/content';
 import styles from './LandingPage.module.css';
 
 const SECTION_IDS = landingDock.map((item) => item.id);
+
+function isRouteFooterLink(link: FooterLink): link is Extract<FooterLink, { to: string }> {
+  return 'to' in link;
+}
 
 function scrollToHash(href: string) {
   const id = href.startsWith('#') ? href.slice(1) : href;
@@ -449,7 +455,6 @@ function LandingShell() {
   const [featureMode, setFeatureMode] = useState<FeaturesMode>('candidate');
   const featureView = landingFeatures.views[featureMode];
   const [activeStepId, setActiveStepId] = useState(featureView.steps[0].id);
-  const activeStep = featureView.steps.find((s) => s.id === activeStepId) ?? featureView.steps[0];
 
   function changeMode(mode: FeaturesMode) {
     setFeatureMode(mode);
@@ -599,6 +604,27 @@ function LandingShell() {
           </div>
         </section>
 
+        <section id={landingFaq.id} className={`${styles.section} ${styles.sectionAlt}`} aria-labelledby="faq-heading">
+          <div className={styles.container}>
+            <SectionLabel>{landingFaq.label}</SectionLabel>
+            <h2 id="faq-heading" className={styles.sectionTitle}>
+              {landingFaq.title}
+            </h2>
+            <div className={styles.faqList}>
+              <Accordion
+                columns={2}
+                allowMultiple
+                items={landingFaq.items.map((item) => ({
+                  id: item.id,
+                  title: item.question,
+                  content: <p>{item.answer}</p>,
+                }))}
+                defaultOpenId={landingFaq.items[0]?.id}
+              />
+            </div>
+          </div>
+        </section>
+
         <section id={landingCta.id} className={styles.ctaSection} aria-labelledby="cta-heading">
           <div className={styles.container}>
             <div className={styles.ctaBand}>
@@ -643,7 +669,7 @@ function LandingShell() {
                   <ul className={styles.footerList}>
                     {col.links.map((link) => (
                       <li key={link.label}>
-                        {'to' in link ? (
+                        {isRouteFooterLink(link) ? (
                           <Link className={styles.footerLink} to={link.to}>
                             {link.label}
                           </Link>
@@ -683,7 +709,17 @@ function LandingShell() {
 
           <div className={styles.footerBar}>
             <p className={styles.footerCopy}>{landingFooter.meta.copyright}</p>
-            <p className={styles.footerNote}>{landingFooter.meta.note}</p>
+            <p className={styles.footerNote}>
+              {landingFooter.meta.notePrefix}{' '}
+              <a
+                className={styles.footerNoteLink}
+                href={landingFooter.meta.noteLink.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {landingFooter.meta.noteLink.label}
+              </a>
+            </p>
           </div>
         </div>
       </footer>
