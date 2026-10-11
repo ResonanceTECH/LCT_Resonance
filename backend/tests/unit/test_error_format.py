@@ -20,6 +20,8 @@ async def test_validation_error_is_flat_russian_and_does_not_echo_input():
                 "password": "sekret7",
                 "role": "candidate",
                 "displayName": "Аня",
+                "termsAccepted": True,
+                "personalDataConsent": True,
             },
             headers={"X-Request-Id": "test-req-1"},
         )
@@ -44,6 +46,8 @@ async def test_business_codes_from_validators():
                 "password": "12345678",
                 "role": "candidate",
                 "displayName": "Аня",
+                "termsAccepted": True,
+                "personalDataConsent": True,
             },
         )
     assert response.json()["message"] == "email: некорректный email"
