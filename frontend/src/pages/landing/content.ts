@@ -1,15 +1,15 @@
 export const landingHero = {
-  brand: 'LCT Resonance',
-  brandTagline: 'IT-найм с доказанными навыками',
-  label: 'Resonance для IT-найма',
-  lines: ['Resonance', 'для IT-найма'] as const,
+  brand: 'FSP Talent',
+  brandTagline: 'Федерация спортивного программирования',
+  label: 'FSP Talent — найм IT-специалистов с подтверждёнными компетенциями',
+  headline: 'Найм IT-специалистов с подтверждёнными компетенциями',
   subtitle:
-    'Кандидат с ФСП. Работодатель с Match Score. Предложение с зарплатой — контакты только после accept.',
+    'Кандидат с ФСП. Работодатель с оценкой соответствия. Предложение с зарплатой — контакты только после согласия.',
   primaryCta: { label: 'Начать', to: '/register' },
-  secondaryCta: { label: 'Demo-вход', to: '/login' },
-  scrollLabel: 'Листай',
-  scrollLabelMouse: 'Прокрутите вниз',
-  scrollTarget: '#hero-continue',
+  secondaryCta: { label: 'Демовход', to: '/login' },
+  scrollLabel: 'Как это работает',
+  scrollTarget: '#how-it-works',
+  heroImage: '/auth-hero.png',
 };
 
 export const landingDock = [
@@ -21,6 +21,7 @@ export const landingDock = [
 export const landingHowItWorks = {
   id: 'how-it-works',
   label: 'Как это работает',
+  title: 'Четыре шага до сигнала',
   steps: [
     {
       id: 'step-01',
@@ -31,20 +32,20 @@ export const landingHowItWorks = {
     {
       id: 'step-02',
       number: '02',
-      title: 'Talent Pool',
-      description: 'Работодатель фильтрует пул и видит Match Score по конкретной вакансии.',
+      title: 'Пул кандидатов',
+      description: 'Работодатель фильтрует пул и видит оценку соответствия по конкретной вакансии.',
     },
     {
       id: 'step-03',
       number: '03',
-      title: 'Оффер с зарплатой',
+      title: 'Предложение с зарплатой',
       description: 'Отклик только через предложение: вилка и условия до обмена контактами.',
     },
     {
       id: 'step-04',
       number: '04',
-      title: 'Accept → контакты',
-      description: 'После принятия Backend открывает контакты. До accept — тишина.',
+      title: 'Согласие → контакты',
+      description: 'После согласия система открывает контакты. До этого — тишина.',
     },
   ],
 };
@@ -52,19 +53,19 @@ export const landingHowItWorks = {
 export const landingRoles = {
   id: 'roles',
   label: 'Для кого',
-  titleLines: ['Две роли', 'один сигнал'],
+  title: 'Две роли — один сигнал',
   cards: [
     {
       id: 'candidate',
       title: 'Кандидат',
-      subtitle: 'Покажи доказанный стек,\nа не только резюме.',
-      features: ['профиль и навыки', 'ФСП-верификация', 'тесты и Career Passport'],
+      subtitle: 'Покажи доказанный стек, а не только резюме.',
+      features: ['Профиль и навыки', 'Достижения ФСП', 'Тесты и карьерный паспорт'],
     },
     {
       id: 'employer',
       title: 'Работодатель',
-      subtitle: 'Найди match по вакансии\nбез шума контактов.',
-      features: ['Talent Pool', 'Match Score + причины', 'shortlist и офферы'],
+      subtitle: 'Найди совпадение по вакансии без шума контактов.',
+      features: ['Пул кандидатов', 'Оценка соответствия и причины', 'Избранное и предложения'],
     },
   ],
 };
@@ -74,67 +75,67 @@ export type FeaturesMode = 'candidate' | 'employer';
 export const landingFeatures = {
   id: 'features',
   label: 'Возможности',
-  titleLines: ['Как работает', 'платформа'],
+  title: 'Как работает платформа',
   modes: [
     { id: 'candidate' as const, label: 'Кандидат' },
     { id: 'employer' as const, label: 'Работодатель' },
   ],
   views: {
     candidate: {
-      subtitle: 'Собери профиль, подтяни ФСП, пройди тесты — получи офферы с цифрами.',
+      subtitle: 'Собери профиль, подтяни ФСП, пройди тесты — получи предложения с цифрами.',
       steps: [
         {
           id: 'profile',
           number: '1',
           title: 'Собери профиль',
-          description: 'Стек, грейд, ожидания по зарплате и формату работы.',
+          description: 'Стек, уровень, ожидания по зарплате и формату работы.',
         },
         {
           id: 'fsp',
           number: '2',
           title: 'Синхронизируй ФСП',
-          description: 'Подтверждённые достижения отделены от self-reported навыков.',
+          description: 'Подтверждённые достижения отделены от заявленных навыков.',
         },
         {
           id: 'tests',
           number: '3',
           title: 'Пройди тесты',
-          description: 'Результаты идут в Match Score — без ручного «украшательства».',
+          description: 'Результаты идут в оценку соответствия — без ручного «украшательства».',
         },
         {
           id: 'offers',
           number: '4',
-          title: 'Получай офферы',
-          description: 'Зарплата и условия до accept. Контакты — только после согласия.',
+          title: 'Получай предложения',
+          description: 'Зарплата и условия до согласия. Контакты — только после принятия.',
         },
       ],
     },
     employer: {
-      subtitle: 'Фильтруй Talent Pool, сравнивай кандидатов и отправляй офферы с вилкой.',
+      subtitle: 'Фильтруй пул кандидатов, сравнивай и отправляй предложения с вилкой.',
       steps: [
         {
           id: 'vacancy',
           number: '1',
           title: 'Опубликуй вакансию',
-          description: 'Требования к стеку, грейду и компенсация как часть сигнала.',
+          description: 'Требования к стеку, уровню и компенсация как часть сигнала.',
         },
         {
           id: 'pool',
           number: '2',
-          title: 'Смотри Talent Pool',
-          description: 'Match Score и причины match/mismatch по каждому кандидату.',
+          title: 'Смотри пул кандидатов',
+          description: 'Оценка соответствия и причины совпадения или расхождения по каждому.',
         },
         {
           id: 'compare',
           number: '3',
-          title: 'Сравни shortlist',
+          title: 'Сравни избранное',
           description: 'Радар навыков и ФСП рядом — без переключения вкладок.',
         },
         {
           id: 'offer',
           number: '4',
-          title: 'Отправь оффер',
-          description: 'Контакты открываются только после accept на стороне кандидата.',
+          title: 'Отправь предложение',
+          description: 'Контакты открываются только после согласия кандидата.',
         },
       ],
     },
@@ -143,7 +144,50 @@ export const landingFeatures = {
 
 export const landingCta = {
   id: 'cta',
-  title: 'Найм без\nхолодных контактов',
-  subtitle: 'Зарегистрируйся как кандидат или работодатель — демо-аккаунты уже в форме входа.',
+  title: 'Найм без холодных контактов',
+  subtitle: 'Зарегистрируйся как кандидат или работодатель — демоаккаунты уже в форме входа.',
   cta: { label: 'Начать', to: '/register' },
+};
+
+export type FooterLink =
+  | { label: string; to: string }
+  | { label: string; href: string; external?: boolean };
+
+export const landingFooter = {
+  brand: 'FSP Talent',
+  tagline: 'Найм IT-специалистов с подтверждёнными компетенциями',
+  description:
+    'Платформа для кандидатов и работодателей на базе визуальной айдентики Федерации спортивного программирования.',
+  pillars: 'Оценка соответствия · ФСП · контакты после согласия',
+  columns: [
+    {
+      title: 'Платформа',
+      links: [
+        { label: 'Как работает', href: '#how-it-works' },
+        { label: 'Возможности', href: '#features' },
+        { label: 'Начать', to: '/register' },
+        { label: 'Демовход', to: '/login' },
+      ] satisfies FooterLink[],
+    },
+    {
+      title: 'Роли',
+      links: [
+        { label: 'Кандидат', href: '#roles' },
+        { label: 'Работодатель', href: '#roles' },
+        { label: 'Карьерный паспорт', to: '/p/passport-cand-1' },
+      ] satisfies FooterLink[],
+    },
+    {
+      title: 'Ресурсы',
+      links: [
+        { label: 'Дизайн-система', to: '/ui-kit' },
+        { label: 'Брендбук ФСП', href: 'https://fsp-russia.ru/press/brandbook/', external: true },
+        { label: 'Сайт ФСП', href: 'https://fsp-russia.ru/', external: true },
+      ] satisfies FooterLink[],
+    },
+  ],
+  meta: {
+    copyright: '© 2026 FSP Talent',
+    note: 'Демосборка · данные могут быть демонстрационными',
+  },
 };
