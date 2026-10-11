@@ -89,6 +89,24 @@ class EmployerAnalytics(ApiModel):
     top_skills: list[SkillCount]
 
 
+AdminEventTypeValue = Literal[
+    "test_completed",
+    "offer_sent",
+    "user_registered",
+    "user_blocked",
+    "category_confirmed",
+]
+
+
+class AdminEvent(ApiModel):
+    id: str
+    type: AdminEventTypeValue
+    title: str
+    description: str | None = None
+    created_at: datetime
+    href: str | None = None
+
+
 class AdminOverview(ApiModel):
     users_total: int
     candidates: int
@@ -97,6 +115,11 @@ class AdminOverview(ApiModel):
     offers_open: int
     offers_accepted: int
     blocked_users: int
+    confirmed_categories: int | None = None
+    assessments_completed: int | None = None
+    offers_total: int | None = None
+    recent_events: list[AdminEvent] | None = None
+    api_status: Literal["ok", "degraded", "down"] | None = "ok"
 
 
 class AdminUserRow(ApiModel):
@@ -105,10 +128,111 @@ class AdminUserRow(ApiModel):
     role: RoleValue
     display_name: str
     status: Literal["active", "blocked", "deleted"]
+    created_at: datetime | None = None
+    specialization: str | None = None
+    confirmed_grade: str | None = None
+    claimed_grade: str | None = None
+    test_status: Literal["none", "passed", "failed", "in_progress"] | None = None
+    has_fsp_id: bool | None = None
+    block_reason: str | None = None
 
 
 class AdminStatusUpdate(ApiModel):
     status: Literal["active", "blocked"]
+    reason: str | None = None
+
+
+class AdminTestTopic(ApiModel):
+    name: str
+    difficulty: Literal["easy", "medium", "hard"]
+    count: int
+
+
+class AdminTestCatalogItem(ApiModel):
+    id: str
+    specialization: str
+    grade: str
+    question_count: int
+    status: Literal["active", "draft", "archived"]
+    topics: list[AdminTestTopic]
+
+
+class AdminQuestionTemplate(ApiModel):
+    id: str
+    specialization: str
+    topic: str
+    difficulty: Literal["easy", "medium", "hard"]
+    parameterized: bool
+    active: bool
+    prompt_preview: str
+
+
+class AdminAttemptRow(ApiModel):
+    id: str
+    user_id: str
+    display_name: str
+    specialization: str
+    grade: str
+    score: int
+    max_score: int
+    passed: bool
+    completed_at: datetime
+    next_retest_at: datetime | None = None
+
+
+class AdminScoreBucket(ApiModel):
+    bucket: str
+    count: int
+
+
+class AdminAssessmentStats(ApiModel):
+    success_rate: float
+    total_attempts: int
+    score_distribution: list[AdminScoreBucket]
+
+
+class AdminAssessmentsResponse(ApiModel):
+    catalog: list[AdminTestCatalogItem]
+    templates: list[AdminQuestionTemplate]
+    attempts: list[AdminAttemptRow]
+    stats: AdminAssessmentStats
+
+
+class AdminCategoryRow(ApiModel):
+    id: str
+    specialization: str
+    grade: str
+    confirmed_candidates: int
+
+
+class AdminTaxonomySkill(ApiModel):
+    id: str
+    name: str
+    aliases: list[str] | None = None
+
+
+class AdminSpecializationRef(ApiModel):
+    id: str
+    name: str
+
+
+class AdminGradeRef(ApiModel):
+    id: str
+    code: str
+    name: str
+
+
+class AdminIndustryRef(ApiModel):
+    id: str
+    name: str
+
+
+class AdminCategoriesResponse(ApiModel):
+    categories: list[AdminCategoryRow]
+    specializations: list[AdminSpecializationRef]
+    grades: list[AdminGradeRef]
+    skills: list[AdminTaxonomySkill]
+    industries: list[AdminIndustryRef]
 
 
 class CompanyIn(ApiModel):

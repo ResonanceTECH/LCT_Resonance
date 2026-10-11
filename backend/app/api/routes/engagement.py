@@ -8,6 +8,8 @@ from app.core.deps import AdminUser, CandidateUser, CurrentUser, DbSession, Empl
 from app.schemas.candidate import PublicPassport
 from app.schemas.common import OkResponse
 from app.schemas.engagement import (
+    AdminAssessmentsResponse,
+    AdminCategoriesResponse,
     AdminOverview,
     AdminStatusUpdate,
     AdminUserRow,
@@ -73,7 +75,7 @@ async def admin_set_status(
     user_id: UUID, payload: AdminStatusUpdate, db: DbSession, user: AdminUser
 ) -> AdminUserRow:
     """Blocking also ends the user's sessions at once."""
-    return await admin.set_status(db, user, user_id, payload.status)
+    return await admin.set_status(db, user, user_id, payload.status, payload.reason)
 
 
 @admin_router.get("/offers", response_model=list[OfferOut])
@@ -84,6 +86,16 @@ async def admin_offers(db: DbSession, user: AdminUser) -> list[OfferOut]:
 @admin_router.get("/vacancies", response_model=list[VacancyOut])
 async def admin_vacancies(db: DbSession, user: AdminUser) -> list[VacancyOut]:
     return await vacancies.list_all(db)
+
+
+@admin_router.get("/assessments", response_model=AdminAssessmentsResponse)
+async def admin_assessments(db: DbSession, user: AdminUser) -> AdminAssessmentsResponse:
+    return await admin.assessments(db)
+
+
+@admin_router.get("/categories", response_model=AdminCategoriesResponse)
+async def admin_categories(db: DbSession, user: AdminUser) -> AdminCategoriesResponse:
+    return await admin.categories(db)
 
 
 @public_router.get("/passports/{slug}", response_model=PublicPassport)
