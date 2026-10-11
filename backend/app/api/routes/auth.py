@@ -1,5 +1,5 @@
+import contextlib
 import html
-import logging
 
 from fastapi import APIRouter, Form, Query, Request, Response
 from fastapi.responses import HTMLResponse
@@ -20,7 +20,6 @@ from app.schemas.common import OkResponse
 from app.services import auth as auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-logger = logging.getLogger("app.auth")
 
 # Public path of this router; the refresh cookie is scoped to it.
 AUTH_PATH = "/api/auth"
@@ -44,12 +43,13 @@ def _auth_response(response: Response, tokens: auth_service.IssuedTokens) -> Aut
     )
 
 
-async def _send_verification(email: str, token: str) -> None:
-    """A mail outage must not undo the registration: the link can be re-sent later."""
-    try:
+async def _send_verification_after_register(email: str, token: str) -> None:
+    """A mail outage must not undo the registration: the link can be re-sent later.
+
+    The failure itself is logged by the email integration.
+    """
+    with contextlib.suppress(AppError):
         await send_verification_email(email=email, token=token)
-    except AppError:
-        logger.warning("verification_email_failed")
 
 
 def _html_page(title: str, body: str) -> HTMLResponse:
@@ -73,7 +73,7 @@ async def register(
         role=payload.role,
         display_name=payload.display_name,
     )
-    await _send_verification(user.email, token)
+    await _send_verification_after_register(user.email, token)
     if get_settings().is_dev:
         # Dev only: lets demos and tests confirm the email without a mailbox.
         response.headers["X-Verification-Token"] = token
@@ -132,7 +132,9 @@ async def resend_verification(response: Response, db: DbSession, user: CurrentUs
     ensure_email_delivery_available()
     token = await auth_service.resend_verification(db, email=user.email)
     if token:
-        await _send_verification(user.email, token)
+        # Unlike registration, a failure here is reported: the user explicitly asked for
+        # the letter and would otherwise see "sent" for an email that never left.
+        await send_verification_email(email=user.email, token=token)
         if get_settings().is_dev:
             response.headers["X-Verification-Token"] = token
     return OkResponse()
