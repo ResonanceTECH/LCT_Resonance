@@ -18,7 +18,7 @@ from app.core.security import (
     verify_password_async,
 )
 from app.models.candidate import CandidateProfile
-from app.models.enums import Readiness, UserRole, UserStatus
+from app.models.enums import ProfileVisibility, Readiness, UserRole, UserStatus
 from app.models.user import AuthSession, EmailVerificationToken, User
 from app.schemas.auth import AuthUserOut
 from app.schemas.consent import ConsentChange
@@ -126,6 +126,11 @@ async def register_user(
                 declared_specialization_id=spec.id,
                 declared_grade_id=grade.id,
                 readiness=Readiness.open_to_offers.value,
+                profile_visibility=(
+                    ProfileVisibility.employers.value
+                    if public_passport_consent
+                    else ProfileVisibility.private.value
+                ),
             )
         )
 

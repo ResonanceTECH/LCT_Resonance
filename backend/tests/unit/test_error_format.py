@@ -5,9 +5,6 @@ from httpx import ASGITransport, AsyncClient
 
 from app.main import app
 
-# Registration requires both 152-FZ checkboxes; the tests below break one other field.
-CONSENTS = {"termsAccepted": True, "personalDataConsent": True}
-
 
 def _client() -> AsyncClient:
     return AsyncClient(transport=ASGITransport(app=app), base_url="http://t")
@@ -23,7 +20,8 @@ async def test_validation_error_is_flat_russian_and_does_not_echo_input():
                 "password": "sekret7",
                 "role": "candidate",
                 "displayName": "Аня",
-                **CONSENTS,
+                "termsAccepted": True,
+                "personalDataConsent": True,
             },
             headers={"X-Request-Id": "test-req-1"},
         )
@@ -48,7 +46,8 @@ async def test_business_codes_from_validators():
                 "password": "12345678",
                 "role": "candidate",
                 "displayName": "Аня",
-                **CONSENTS,
+                "termsAccepted": True,
+                "personalDataConsent": True,
             },
         )
     assert response.json()["message"] == "email: некорректный email"
