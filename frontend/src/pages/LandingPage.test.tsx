@@ -22,7 +22,21 @@ describe('LandingPage', () => {
     expect(screen.getAllByText('Пул кандидатов').length).toBeGreaterThan(0);
     expect(screen.getByRole('heading', { name: 'Четыре шага до сигнала' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Открыть меню' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Вопросы и ответы' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Чем это отличается от обычного job board?' }),
+    ).toBeInTheDocument();
+
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Вопросы и ответы' })).toHaveAttribute('href', '#faq');
+    expect(screen.getByRole('link', { name: 'Условия использования' })).toHaveAttribute(
+      'href',
+      '/terms',
+    );
+    expect(screen.getByRole('link', { name: 'Политика конфиденциальности' })).toHaveAttribute(
+      'href',
+      '/privacy',
+    );
     expect(screen.getByText('© 2026 FSP Talent')).toBeInTheDocument();
   });
 });

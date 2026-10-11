@@ -35,6 +35,7 @@ import {
   vacancies,
 } from '@/mocks/fixtures';
 import {
+  Accordion,
   Badge,
   Button,
   Card,
@@ -270,7 +271,7 @@ export function UiKitPage() {
               <span className={styles.statLabel}>color tokens</span>
             </div>
             <div className={styles.stat}>
-              <span className={styles.statValue}>16</span>
+              <span className={styles.statValue}>17</span>
               <span className={styles.statLabel}>shared UI</span>
             </div>
             <div className={styles.stat}>
@@ -540,7 +541,7 @@ import { MatchScore } from '@/entities/ui/MatchScore';
           <Section
             id="feedback"
             title="Feedback & states"
-            hint="loading · empty · error · progress · modal · toast"
+            hint="loading · empty · error · progress · modal · accordion"
           >
             <div className={styles.stateGrid}>
               <Canvas label="Loading">
@@ -581,6 +582,29 @@ import { MatchScore } from '@/entities/ui/MatchScore';
                 </div>
               </Canvas>
             </div>
+            <div className={styles.gap} />
+            <Canvas label="Accordion (FAQ)">
+              <Accordion
+                items={[
+                  {
+                    id: 'a1',
+                    title: 'Когда открываются контакты?',
+                    content: <p>Только после согласия кандидата на предложение.</p>,
+                  },
+                  {
+                    id: 'a2',
+                    title: 'Что такое оценка соответствия?',
+                    content: <p>Сигнал совпадения стека, уровня и тестов с вакансией — из DTO бэкенда.</p>,
+                  },
+                  {
+                    id: 'a3',
+                    title: 'Нужен ли аккаунт ФСП?',
+                    content: <p>Нет. ФСП усиливает сигнал, но профиль и тесты работают без него.</p>,
+                  },
+                ]}
+                defaultOpenId="a1"
+              />
+            </Canvas>
             <div className={styles.gap} />
             <Canvas label="Toast patterns">
               <div className={styles.toastStack}>

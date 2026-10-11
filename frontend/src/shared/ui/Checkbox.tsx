@@ -1,14 +1,17 @@
-import type { InputHTMLAttributes } from 'react';
+import type { InputHTMLAttributes, ReactNode } from 'react';
 import styles from './ui.module.css';
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & {
-  label: string;
+  label: ReactNode;
 };
 
-export function Checkbox({ label, id, ...props }: Props) {
+export function Checkbox({ label, id, className, ...props }: Props) {
   const checkId = id ?? props.name;
   return (
-    <label className={styles.checkbox} htmlFor={checkId}>
+    <label
+      className={[styles.checkbox, styles.checkboxTop, className].filter(Boolean).join(' ')}
+      htmlFor={checkId}
+    >
       <input id={checkId} type="checkbox" {...props} />
       <span>{label}</span>
     </label>
