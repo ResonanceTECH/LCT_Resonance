@@ -36,12 +36,12 @@ export function RegisterPage() {
     <div className="auth-page">
       <AuthVisual
         title="Найм без холодных звонков и лишней суеты"
-        description="Кандидаты с подтверждёнными навыками сами получают предложения. Работодатели — сразу релевантный Talent Pool, без бесконечного скрининга резюме."
+        description="Кандидаты с подтверждёнными навыками сами получают предложения. Работодатели — сразу релевантный пул, без бесконечного скрининга резюме."
       />
       <div className="auth-panel">
         <div className="auth-card">
           <h1>Регистрация</h1>
-          <p>Выберите роль и создайте аккаунт FSP Talent.</p>
+          <p>Выберите роль и создайте аккаунт.</p>
           <form
             className="stack"
             onSubmit={form.handleSubmit(async (values) => {

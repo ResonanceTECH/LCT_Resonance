@@ -366,7 +366,7 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
           <Section id="feedback" title="Feedback & states" hint="Каждый data view: loading · success · empty · error · disabled · success action">
             <div className={styles.stateGrid}>
               <Canvas label="Loading">
-                <Loader label="Загрузка Talent Pool…" />
+                <Loader label="Загрузка пула кандидатов…" />
                 <div className={styles.stack} style={{ marginTop: '1rem' }}>
                   <Skeleton height={18} width="70%" />
                   <Skeleton height={14} />
@@ -376,7 +376,7 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
               <Canvas label="Empty">
                 <EmptyState
                   title="Кандидаты не найдены"
-                  description="Смягчи фильтры или обнови Talent Pool."
+                  description="Смягчите фильтры или обновите пул кандидатов."
                   action={
                     <Button type="button" variant="secondary">
                       Сбросить фильтры
@@ -387,7 +387,7 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
               <Canvas label="Error">
                 <ErrorState
                   title="Не удалось загрузить"
-                  description="Backend временно недоступен."
+                  description="Сервер временно недоступен."
                   onRetry={() => undefined}
                 />
               </Canvas>
@@ -493,7 +493,7 @@ import { MatchScore } from '@/entities/ui/MatchScore';`}</pre>
             </div>
           </Section>
 
-          <Section id="match" title="Match Score & Skill Radar" hint="Только отображение DTO с backend">
+          <Section id="match" title="Оценка соответствия и радар" hint="Только отображение данных с сервера">
             <div className={styles.grid2}>
               <Canvas label="MatchScore">
                 <MatchScore match={match} />

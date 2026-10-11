@@ -6,6 +6,7 @@ import { vacancyApi } from '@/shared/api/endpoints';
 import { getErrorMessage } from '@/shared/api/errors';
 import {
   formatGrade,
+  formatSpecialization,
   formatVacancyStatus,
   formatWorkFormat,
 } from '@/shared/lib/formatters';
@@ -38,7 +39,7 @@ export function EmployerVacancyDetailPage() {
         <div>
           <h1>{vacancy.title}</h1>
           <p>
-            {vacancy.specialization} · {formatGrade(vacancy.requiredGrade)} ·{' '}
+            {formatSpecialization(vacancy.specialization)} · {formatGrade(vacancy.requiredGrade)} ·{' '}
             {formatWorkFormat(vacancy.workFormat)}
           </p>
         </div>

@@ -22,7 +22,7 @@ describe('CandidateVacancyDetailPage', () => {
     );
 
     expect(await screen.findByTestId('match-to-me')).toBeInTheDocument();
-    expect(screen.getByText(/Match \d+%/)).toBeInTheDocument();
+    expect(screen.getByText(/Соответствие \d+%/)).toBeInTheDocument();
 
     const saveBtn = await screen.findByTestId('save-vacancy');
     await user.click(saveBtn);

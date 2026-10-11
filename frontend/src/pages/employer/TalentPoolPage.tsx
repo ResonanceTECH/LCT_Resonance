@@ -5,6 +5,7 @@ import { CandidateCard } from '@/entities/ui/CandidateCard';
 import type { TalentPoolFilters } from '@/entities/types';
 import { candidateApi, vacancyApi } from '@/shared/api/endpoints';
 import { getErrorMessage } from '@/shared/api/errors';
+import { formatSpecialization } from '@/shared/lib/formatters';
 import {
   GRADE_OPTIONS,
   READINESS_OPTIONS,
@@ -85,8 +86,8 @@ export function EmployerTalentPoolPage() {
     <div>
       <div className="page-header">
         <div>
-          <h1>Talent Pool</h1>
-          <p>Фильтры уходят на Backend. Match Score — только при выбранной вакансии.</p>
+          <h1>Пул кандидатов</h1>
+          <p>Фильтры применяются на сервере. Оценка соответствия — только при выбранной вакансии.</p>
         </div>
         <Link
           to={
@@ -112,9 +113,9 @@ export function EmployerTalentPoolPage() {
           onChange={(e) => setFilters((f) => ({ ...f, q: e.target.value }))}
         />
         <Select
-          label="Вакансия для Match"
+          label="Вакансия для оценки"
           allowEmpty
-          emptyLabel="Без Match Score"
+          emptyLabel="Без оценки соответствия"
           options={vacancyOptions}
           value={filters.vacancyId ?? ''}
           onChange={(e) => setFilters((f) => ({ ...f, vacancyId: e.target.value }))}
@@ -124,7 +125,7 @@ export function EmployerTalentPoolPage() {
           allowEmpty
           emptyLabel="По умолчанию"
           options={[
-            { value: 'match', label: 'Match Score' },
+            { value: 'match', label: 'Оценка соответствия' },
             { value: 'name', label: 'Имя' },
             { value: 'grade', label: 'Грейд' },
             { value: 'salary', label: 'Зарплата' },
@@ -137,7 +138,10 @@ export function EmployerTalentPoolPage() {
         <Select
           label="Специализация"
           allowEmpty
-          options={SPECIALIZATION_OPTIONS.map((s) => ({ value: s, label: s }))}
+          options={SPECIALIZATION_OPTIONS.map((s) => ({
+            value: s,
+            label: formatSpecialization(s),
+          }))}
           value={filters.specialization ?? ''}
           onChange={(e) => setFilters((f) => ({ ...f, specialization: e.target.value }))}
         />

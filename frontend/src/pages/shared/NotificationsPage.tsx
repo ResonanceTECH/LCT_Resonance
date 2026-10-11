@@ -41,7 +41,7 @@ export function NotificationsPage() {
       <div className="page-header">
         <div>
           <h1>Уведомления</h1>
-          <p>Офферы, ответы и события профиля. Источник — Backend.</p>
+          <p>Предложения, ответы и события профиля.</p>
         </div>
         <Button
           type="button"

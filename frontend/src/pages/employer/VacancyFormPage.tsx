@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { vacancyApi } from '@/shared/api/endpoints';
 import { getErrorMessage } from '@/shared/api/errors';
+import { formatSpecialization } from '@/shared/lib/formatters';
 import {
   GRADE_OPTIONS,
   SPECIALIZATION_OPTIONS,
@@ -156,7 +157,7 @@ export function EmployerVacancyFormPage({ mode }: { mode: 'create' | 'edit' }) {
         <section className="section-card stack" style={{ marginBottom: '1rem' }} data-testid="ai-parse">
           <h3 style={{ margin: 0 }}>AI-разбор текста вакансии</h3>
           <p className="muted" style={{ margin: 0 }}>
-            Парсинг выполняется на Backend/ML. Frontend только подставляет черновик в форму.
+            Парсинг выполняется на сервере. Интерфейс только подставляет черновик в форму.
           </p>
           <Textarea
             label="Текст вакансии"
@@ -202,7 +203,10 @@ export function EmployerVacancyFormPage({ mode }: { mode: 'create' | 'edit' }) {
         <div className="grid-2">
           <Select
             label="Специализация"
-            options={SPECIALIZATION_OPTIONS.map((s) => ({ value: s, label: s }))}
+            options={SPECIALIZATION_OPTIONS.map((s) => ({
+              value: s,
+              label: formatSpecialization(s),
+            }))}
             {...form.register('specialization')}
           />
           <Select label="Грейд" options={GRADE_OPTIONS} {...form.register('requiredGrade')} />

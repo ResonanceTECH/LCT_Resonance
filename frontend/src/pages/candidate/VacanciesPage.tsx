@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { VacancyCard } from '@/entities/ui/VacancyCard';
 import { vacancyApi } from '@/shared/api/endpoints';
 import { getErrorMessage } from '@/shared/api/errors';
+import { formatSpecialization } from '@/shared/lib/formatters';
 import { SPECIALIZATION_OPTIONS } from '@/shared/lib/labels';
 import { Checkbox, EmptyState, ErrorState, Loader, Select } from '@/shared/ui';
 
@@ -39,20 +40,23 @@ export function CandidateVacanciesPage() {
       <div className="page-header">
         <div>
           <h1>Каталог вакансий</h1>
-          <p>Match to me считает Backend. Отклик — доп. сценарий к обратному рекрутингу.</p>
+          <p>Оценку соответствия считает сервер. Отклик — доп. сценарий к обратному рекрутингу.</p>
         </div>
       </div>
       <div className="filters section-card">
         <Select
           label="Специализация"
           allowEmpty
-          options={SPECIALIZATION_OPTIONS.map((s) => ({ value: s, label: s }))}
+          options={SPECIALIZATION_OPTIONS.map((s) => ({
+            value: s,
+            label: formatSpecialization(s),
+          }))}
           value={specialization}
           onChange={(e) => setSpecialization(e.target.value)}
         />
         <Checkbox
           id="match-to-me"
-          label="Показать Match to me"
+          label="Показать оценку соответствия"
           checked={matchToMe}
           onChange={(e) => setMatchToMe(e.target.checked)}
         />

@@ -5,7 +5,7 @@ import { SalaryRange } from '@/entities/ui/SalaryRange';
 import { SkillBadge } from '@/entities/ui/SkillBadge';
 import { vacancyApi } from '@/shared/api/endpoints';
 import { getErrorMessage } from '@/shared/api/errors';
-import { formatGrade, formatWorkFormat } from '@/shared/lib/formatters';
+import { formatGrade, formatSpecialization, formatWorkFormat } from '@/shared/lib/formatters';
 import { Badge, Button, ErrorState, Loader, uiStyles } from '@/shared/ui';
 
 export function CandidateVacancyDetailPage() {
@@ -69,7 +69,7 @@ export function CandidateVacancyDetailPage() {
         <div>
           <h1>{vacancy.title}</h1>
           <p>
-            {vacancy.specialization} · {formatGrade(vacancy.requiredGrade)} ·{' '}
+            {formatSpecialization(vacancy.specialization)} · {formatGrade(vacancy.requiredGrade)} ·{' '}
             {formatWorkFormat(vacancy.workFormat)}
           </p>
         </div>
@@ -78,7 +78,7 @@ export function CandidateVacancyDetailPage() {
         </Badge>
       </div>
 
-      {matchQuery.isLoading ? <Loader label="Считаем Match to me..." /> : null}
+      {matchQuery.isLoading ? <Loader label="Считаем соответствие..." /> : null}
       {matchQuery.data ? (
         <div data-testid="match-to-me">
           <MatchScore match={matchQuery.data} />
@@ -86,7 +86,7 @@ export function CandidateVacancyDetailPage() {
       ) : null}
       {matchQuery.isError ? (
         <ErrorState
-          title="Не удалось получить Match to me"
+          title="Не удалось получить оценку соответствия"
           description={getErrorMessage(matchQuery.error)}
           onRetry={() => void matchQuery.refetch()}
         />

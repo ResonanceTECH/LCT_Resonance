@@ -39,7 +39,7 @@ export function CandidateFspPage() {
       <div className="page-header">
         <div>
           <h1>Достижения ФСП</h1>
-          <p>Данные приходят только через Backend. На фронте — отображение и синхронизация.</p>
+          <p>Данные приходят с сервера. Здесь — отображение и синхронизация.</p>
         </div>
         <Button
           type="button"

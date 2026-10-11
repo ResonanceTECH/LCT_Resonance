@@ -15,7 +15,7 @@ const UNPUBLISHED_HINT: Record<PassportUnpublishedReason, string> = {
     'работодатели, а паспорт откроется по ссылке. Контакты останутся скрытыми. Согласие можно отозвать.',
 };
 
-/** Public Career Passport: the shareable link, or why it is not public yet. */
+/** Публичный карьерный паспорт: ссылка или причина, почему ещё скрыт. */
 function PassportCard() {
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
@@ -44,7 +44,7 @@ function PassportCard() {
 
   return (
     <div className="section-card stack" data-testid="passport-card" style={{ marginBottom: '1rem' }}>
-      <strong>Career Passport</strong>
+      <strong>Карьерный паспорт</strong>
       {published ? (
         <>
           <p className="muted">
