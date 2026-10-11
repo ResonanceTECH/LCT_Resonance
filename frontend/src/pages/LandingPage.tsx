@@ -6,6 +6,7 @@ import {
   landingCta,
   landingDock,
   landingFeatures,
+  landingFooter,
   landingHero,
   landingHowItWorks,
   landingRoles,
@@ -13,21 +14,7 @@ import {
 } from '@/pages/landing/content';
 import styles from './LandingPage.module.css';
 
-type Theme = 'light' | 'dark';
-
-const THEME_KEY = 'resonance-landing-theme';
 const SECTION_IDS = landingDock.map((item) => item.id);
-const BENTO_TONES = ['bentoTone0', 'bentoTone1', 'bentoTone2', 'bentoTone3'] as const;
-
-function readTheme(): Theme {
-  try {
-    const stored = localStorage.getItem(THEME_KEY);
-    if (stored === 'light' || stored === 'dark') return stored;
-  } catch {
-    /* ignore */
-  }
-  return 'light';
-}
 
 function scrollToHash(href: string) {
   const id = href.startsWith('#') ? href.slice(1) : href;
@@ -46,16 +33,16 @@ function getActiveSectionId(ids: string[]): string | null {
   return active;
 }
 
-function ProgressRing({ value }: { value: number }) {
-  const r = 28;
+function MatchRing({ value, size = 44 }: { value: number; size?: number }) {
+  const r = 16;
   const c = 2 * Math.PI * r;
   const offset = c - (value / 100) * c;
   return (
-    <svg className={styles.ring} viewBox="0 0 72 72" aria-hidden>
-      <circle cx="36" cy="36" r={r} className={styles.ringTrack} />
+    <svg className={styles.ring} style={{ width: size, height: size }} viewBox="0 0 40 40" aria-hidden>
+      <circle cx="20" cy="20" r={r} className={styles.ringTrack} />
       <circle
-        cx="36"
-        cy="36"
+        cx="20"
+        cy="20"
         r={r}
         className={styles.ringValue}
         strokeDasharray={c}
@@ -65,101 +52,419 @@ function ProgressRing({ value }: { value: number }) {
   );
 }
 
-function ProductPreview({ compact = false }: { compact?: boolean }) {
+const CANDIDATE_NAV = [
+  'Обзор',
+  'Профиль',
+  'ФСП',
+  'Тесты',
+  'Предложения',
+  'Вакансии',
+] as const;
+
+const EMPLOYER_NAV = [
+  'Обзор',
+  'Пул кандидатов',
+  'Вакансии',
+  'Избранное',
+  'Сравнение',
+  'Предложения',
+] as const;
+
+const CANDIDATE_NAV_BY_STEP: Record<string, number> = {
+  profile: 1,
+  fsp: 2,
+  tests: 3,
+  offers: 4,
+};
+
+const EMPLOYER_NAV_BY_STEP: Record<string, number> = {
+  vacancy: 2,
+  pool: 1,
+  compare: 4,
+  offer: 5,
+};
+
+const DEMO_CANDIDATES = [
+  {
+    initials: 'АК',
+    name: 'Алина К.',
+    role: 'Бэкенд · средний',
+    match: 92,
+    skills: ['Go', 'PostgreSQL', 'Docker'],
+    badges: ['ФСП', 'Тест'],
+    reason: 'Совпал стек · есть достижения ФСП',
+  },
+  {
+    initials: 'МР',
+    name: 'Максим Р.',
+    role: 'Бэкенд · старший',
+    match: 84,
+    skills: ['Python', 'FastAPI', 'Redis'],
+    badges: ['Тест'],
+    reason: 'Уровень подтверждён тестом',
+  },
+  {
+    initials: 'ИС',
+    name: 'Игорь С.',
+    role: 'Фулстек · средний',
+    match: 77,
+    skills: ['TypeScript', 'React', 'Go'],
+    badges: ['Заявлено'],
+    reason: 'Частичное совпадение по стеку',
+  },
+] as const;
+
+function SkillChips({ skills }: { skills: readonly string[] }) {
   return (
-    <div className={`${styles.preview} ${compact ? styles.previewCompact : ''}`} aria-hidden>
+    <div className={styles.uiSkills}>
+      {skills.map((s) => (
+        <span key={s} className={styles.uiSkill}>
+          {s}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function PreviewPageHead({
+  title,
+  subtitle,
+  action,
+}: {
+  title: string;
+  subtitle: string;
+  action?: string;
+}) {
+  return (
+    <div className={styles.uiPageHead}>
+      <div>
+        <h3 className={styles.uiPageTitle}>{title}</h3>
+        <p className={styles.uiPageSub}>{subtitle}</p>
+      </div>
+      {action ? <span className={styles.uiBtnPrimary}>{action}</span> : null}
+    </div>
+  );
+}
+
+function CandidatePreviewBody({ stepId }: { stepId: string }) {
+  if (stepId === 'fsp') {
+    return (
+      <>
+        <PreviewPageHead title="Достижения ФСП" subtitle="Подтверждённые факты отдельно от заявленных навыков" />
+        <div className={styles.uiCardList}>
+          {[
+            { title: 'Олимпиада ФСП', meta: 'Алгоритмы · 2025 · топ-10%', tone: 'ok' as const },
+            { title: 'Рейтинг дисциплины', meta: 'Спортивное программирование · активен', tone: 'ok' as const },
+            { title: 'Заявленный Kafka', meta: 'Не из реестра ФСП', tone: 'muted' as const },
+          ].map((row) => (
+            <div key={row.title} className={styles.uiRowCard}>
+              <div>
+                <p className={styles.uiRowTitle}>{row.title}</p>
+                <p className={styles.uiRowMeta}>{row.meta}</p>
+              </div>
+              <span className={row.tone === 'ok' ? styles.uiBadgeOk : styles.uiBadgeMute}>
+                {row.tone === 'ok' ? 'ФСП' : 'Заявлено'}
+              </span>
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  if (stepId === 'tests') {
+    return (
+      <>
+        <PreviewPageHead title="Тестирование" subtitle="Результат влияет на оценку соответствия" action="Начать тест" />
+        <div className={styles.uiSplit}>
+          <div className={styles.uiPanel}>
+            <div className={styles.uiMatchHero}>
+              <MatchRing value={82} size={64} />
+              <div>
+                <p className={styles.uiMatchValue}>82 / 100</p>
+                <p className={styles.uiRowMeta}>Бэкенд · средний · подтверждён</p>
+              </div>
+            </div>
+            <div className={styles.uiProgressTrack}>
+              <span style={{ width: '82%' }} />
+            </div>
+          </div>
+          <div className={styles.uiPanel}>
+            <p className={styles.uiPanelLabel}>Навыки по источнику</p>
+            <ul className={styles.uiPlainList}>
+              <li>
+                <span>Go</span>
+                <span className={styles.uiBadgeOk}>тест</span>
+              </li>
+              <li>
+                <span>PostgreSQL</span>
+                <span className={styles.uiBadgeOk}>тест</span>
+              </li>
+              <li>
+                <span>Kafka</span>
+                <span className={styles.uiBadgeMute}>заявлено</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (stepId === 'offers') {
+    return (
+      <>
+        <PreviewPageHead title="Входящие предложения" subtitle="Контакты скрыты до согласия" />
+        <div className={styles.uiCardList}>
+          {[
+            { company: 'Компания А', role: 'Старший бэкенд', pay: '280–320 тыс ₽', status: 'Новое' },
+            { company: 'Компания Б', role: 'Инженер данных', pay: '250–290 тыс ₽', status: 'Просмотрено' },
+          ].map((o) => (
+            <div key={o.company} className={styles.uiRowCard}>
+              <div>
+                <p className={styles.uiRowTitle}>
+                  {o.company} · {o.role}
+                </p>
+                <p className={styles.uiRowMeta}>
+                  {o.pay} · удалённо · контакты закрыты
+                </p>
+              </div>
+              <span className={styles.uiBadgeAccent}>{o.status}</span>
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <PreviewPageHead
+        title="Кабинет кандидата"
+        subtitle="Сводка по профилю, предложениям и заполненности"
+        action="Редактировать"
+      />
+      <div className={styles.uiStats}>
+        {[
+          ['Просмотры', '128'],
+          ['Предложения', '2'],
+          ['Принято', '0'],
+          ['Заполненность', '72%'],
+        ].map(([label, value]) => (
+          <div key={label} className={styles.uiStat}>
+            <span>{label}</span>
+            <strong>{value}</strong>
+          </div>
+        ))}
+      </div>
+      <div className={styles.uiPanel}>
+        <div className={styles.uiPerson}>
+          <span className={styles.uiAvatar}>АК</span>
+          <div>
+            <p className={styles.uiRowTitle}>Алина К.</p>
+            <p className={styles.uiRowMeta}>Инженер бэкенда · средний · гибрид</p>
+          </div>
+          <span className={styles.uiBadgeMute}>ФСП не синхр.</span>
+        </div>
+        <SkillChips skills={['Go', 'PostgreSQL', 'Docker', 'Kafka']} />
+        <div className={styles.uiProgressTrack}>
+          <span style={{ width: '72%' }} />
+        </div>
+        <p className={styles.uiRowMeta}>Заполненность профиля 72%</p>
+      </div>
+    </>
+  );
+}
+
+function EmployerPreviewBody({ stepId }: { stepId: string }) {
+  if (stepId === 'vacancy') {
+    return (
+      <>
+        <PreviewPageHead title="Новая вакансия" subtitle="Стек и вилка — часть сигнала" action="Опубликовать" />
+        <div className={styles.uiForm}>
+          {[
+            ['Должность', 'Старший инженер бэкенда'],
+            ['Уровень', 'Старший'],
+            ['Вилка', '280–350 тыс ₽'],
+            ['Формат', 'Удалённо'],
+            ['Стек', 'Go, PostgreSQL, Kafka'],
+          ].map(([label, value]) => (
+            <label key={label} className={styles.uiField}>
+              <span>{label}</span>
+              <div>{value}</div>
+            </label>
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  if (stepId === 'compare') {
+    return (
+      <>
+        <PreviewPageHead title="Сравнение" subtitle="До 4 кандидатов рядом" action="Отправить предложение" />
+        <div className={styles.uiCompare}>
+          {DEMO_CANDIDATES.slice(0, 2).map((c) => (
+            <div key={c.name} className={styles.uiCompareCol}>
+              <div className={styles.uiPerson}>
+                <span className={styles.uiAvatar}>{c.initials}</span>
+                <div>
+                  <p className={styles.uiRowTitle}>{c.name}</p>
+                  <p className={styles.uiRowMeta}>{c.role}</p>
+                </div>
+              </div>
+              <div className={styles.uiMatchHero}>
+                <MatchRing value={c.match} />
+                <p className={styles.uiMatchValue}>{c.match}%</p>
+              </div>
+              <SkillChips skills={c.skills} />
+              <div className={styles.uiBadgeRow}>
+                {c.badges.map((b) => (
+                  <span key={b} className={b === 'ФСП' ? styles.uiBadgeOk : styles.uiBadgeAccent}>
+                    {b}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  if (stepId === 'offer') {
+    return (
+      <>
+        <PreviewPageHead title="Новое предложение" subtitle="Алина К. · соответствие 92%" action="Отправить" />
+        <div className={styles.uiForm}>
+          {[
+            ['Кандидат', 'Алина К. · бэкенд · средний'],
+            ['Вакансия', 'Старший инженер бэкенда'],
+            ['Вилка', '300 тыс ₽'],
+            ['Формат', 'Удалённо · полная занятость'],
+            ['Контакты', 'Скрыты до согласия'],
+          ].map(([label, value]) => (
+            <label key={label} className={styles.uiField}>
+              <span>{label}</span>
+              <div>{value}</div>
+            </label>
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <PreviewPageHead
+        title="Пул кандидатов"
+        subtitle="Оценка соответствия по вакансии «Старший бэкенд»"
+        action="Сравнить (2)"
+      />
+      <div className={styles.uiFilters}>
+        <span className={styles.uiFilterActive}>Вакансия: старший бэкенд</span>
+        <span className={styles.uiFilter}>Уровень</span>
+        <span className={styles.uiFilter}>ФСП</span>
+        <span className={styles.uiFilter}>Формат</span>
+        <span className={styles.uiFilter}>Стек</span>
+      </div>
+      <div className={styles.uiCardList}>
+        {DEMO_CANDIDATES.map((c) => (
+          <article key={c.name} className={styles.uiCandidate}>
+            <div className={styles.uiCandidateTop}>
+              <div className={styles.uiPerson}>
+                <span className={styles.uiAvatar}>{c.initials}</span>
+                <div>
+                  <p className={styles.uiRowTitle}>{c.name}</p>
+                  <p className={styles.uiRowMeta}>{c.role}</p>
+                </div>
+              </div>
+              <div className={styles.uiMatchPill}>
+                <MatchRing value={c.match} size={36} />
+                <div>
+                  <strong>{c.match}%</strong>
+                  <span>соответствие</span>
+                </div>
+              </div>
+            </div>
+            <SkillChips skills={c.skills} />
+            <div className={styles.uiCandidateFoot}>
+              <div className={styles.uiBadgeRow}>
+                {c.badges.map((b) => (
+                  <span key={b} className={b === 'ФСП' ? styles.uiBadgeOk : styles.uiBadgeAccent}>
+                    {b}
+                  </span>
+                ))}
+              </div>
+              <p className={styles.uiRowMeta}>{c.reason}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function ProductPreview({
+  mode = 'employer',
+  stepId,
+  compact = false,
+}: {
+  mode?: FeaturesMode;
+  stepId?: string;
+  compact?: boolean;
+}) {
+  const isCandidate = mode === 'candidate';
+  const nav = isCandidate ? CANDIDATE_NAV : EMPLOYER_NAV;
+  const activeNav =
+    (isCandidate ? CANDIDATE_NAV_BY_STEP[stepId ?? 'profile'] : EMPLOYER_NAV_BY_STEP[stepId ?? 'pool']) ?? 0;
+  const resolvedStep = stepId ?? (isCandidate ? 'profile' : 'pool');
+  const userName = isCandidate ? 'Алина К.' : 'ООО «Сигнал»';
+  const userRole = isCandidate ? 'Кандидат' : 'Работодатель';
+  const userInitials = isCandidate ? 'АК' : 'СР';
+
+  return (
+    <div
+      className={`${styles.preview} ${compact ? styles.previewCompact : ''}`}
+      data-mode={mode}
+      aria-hidden
+    >
       <aside className={styles.previewAside}>
-        <p className={styles.previewBrand}>
-          Resonance<span>.</span>
-        </p>
+        <img src="/fsp-logo-dark.svg" alt="" className={styles.previewLogo} width={120} height={40} />
         <nav className={styles.previewNav}>
-          {['Talent Pool', 'Вакансии', 'Shortlist', 'Офферы'].map((label, i) => (
-            <div key={label} className={i === 0 ? styles.previewNavActive : styles.previewNavItem}>
+          {nav.map((label, i) => (
+            <div key={label} className={i === activeNav ? styles.previewNavActive : styles.previewNavItem}>
               {label}
             </div>
           ))}
         </nav>
       </aside>
-      <div className={styles.previewMain}>
-        <div className={styles.previewHead}>
-          <div>
-            <p className={styles.previewTitle}>Talent Pool</p>
-            <p className={styles.previewMuted}>Match Score по вакансии Senior Backend</p>
-          </div>
-          <span className={styles.previewChip}>ФСП</span>
-        </div>
-        <div className={styles.previewGrid}>
-          <div className={styles.previewCard}>
-            <p className={styles.previewCardLabel}>Top match</p>
-            <div className={styles.previewScoreRow}>
-              <ProgressRing value={92} />
-              <div>
-                <p className={styles.previewScore}>92%</p>
-                <p className={styles.previewMuted}>Match Score</p>
-              </div>
+
+      <div className={styles.previewChrome}>
+        <header className={styles.previewTopbar}>
+          <div className={styles.previewSearch}>Поиск по стеку, уровню, ФСП…</div>
+          <span className={styles.previewBell} />
+          <div className={styles.previewUser}>
+            <span className={styles.uiAvatar}>{userInitials}</span>
+            <div>
+              <strong>{userName}</strong>
+              <span>{userRole}</span>
             </div>
-            <p className={styles.previewAccent}>Go · PostgreSQL · ФСП verified</p>
           </div>
-          <div className={styles.previewCard}>
-            <p className={styles.previewCardLabel}>Кандидаты</p>
-            <ul className={styles.previewList}>
-              {[
-                { name: 'Алина К.', score: '92%' },
-                { name: 'Максим Р.', score: '84%' },
-                { name: 'Игорь С.', score: '77%' },
-              ].map((row) => (
-                <li key={row.name}>
-                  <span>{row.name}</span>
-                  <strong>{row.score}</strong>
-                </li>
-              ))}
-            </ul>
-          </div>
+        </header>
+        <div className={styles.previewMain} key={`${mode}-${resolvedStep}`}>
+          {isCandidate ? (
+            <CandidatePreviewBody stepId={resolvedStep} />
+          ) : (
+            <EmployerPreviewBody stepId={resolvedStep} />
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-function ThemeToggle({ theme, onToggle }: { theme: Theme; onToggle: () => void }) {
-  return (
-    <button
-      type="button"
-      className={styles.themeToggle}
-      onClick={onToggle}
-      aria-label={theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
-    >
-      {theme === 'dark' ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" />
-          <path
-            d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        </svg>
-      ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <path
-            d="M21 14.5A8.5 8.5 0 0 1 9.5 3 7 7 0 1 0 21 14.5Z"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-          />
-        </svg>
-      )}
-    </button>
-  );
-}
-
-function LandingHeader({
-  theme,
-  onToggleTheme,
-}: {
-  theme: Theme;
-  onToggleTheme: () => void;
-}) {
+function LandingHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -172,7 +477,7 @@ function LandingHeader({
     const onScroll = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        setScrolled(window.scrollY > 24);
+        setScrolled(window.scrollY > 8);
         setActiveId(getActiveSectionId(SECTION_IDS));
       });
     };
@@ -207,17 +512,41 @@ function LandingHeader({
     };
   }, [menuOpen]);
 
+  const solid = scrolled || menuOpen;
+
   return (
-    <header className={`${styles.header} ${scrolled || menuOpen ? styles.headerSolid : ''}`}>
+    <header className={`${styles.header} ${solid ? styles.headerSolid : ''}`}>
       <div className={styles.headerInner}>
         <Link to="/" className={styles.logo} aria-label={`${landingHero.brand} — ${landingHero.brandTagline}`}>
-          <span className={styles.logoMark}>{landingHero.brand}</span>
-          <span className={styles.logoTag}>{landingHero.brandTagline}</span>
+          <img
+            src={solid ? '/fsp-logo-dark.svg' : '/fsp-logo.svg'}
+            alt=""
+            className={styles.logoImg}
+            width={138}
+            height={47}
+            decoding="async"
+          />
         </Link>
+
+        <nav className={styles.headerNav} aria-label="Разделы лендинга">
+          {landingDock.map((item) => (
+            <a
+              key={item.id}
+              href={item.href}
+              className={activeId === item.id ? styles.headerNavActive : styles.headerNavLink}
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToHash(item.href);
+              }}
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
 
         <div className={styles.headerActions}>
           <div className={styles.headerAuth}>
-            <Link className={styles.btnSecondary} to="/login">
+            <Link className={styles.btnOutline} to="/login">
               Войти
             </Link>
             <Link className={styles.btnPrimary} to="/register">
@@ -233,7 +562,7 @@ function LandingHeader({
             aria-label={menuOpen ? 'Закрыть меню' : 'Открыть меню'}
             onClick={() => setMenuOpen((v) => !v)}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
               {menuOpen ? (
                 <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               ) : (
@@ -245,7 +574,14 @@ function LandingHeader({
       </div>
 
       {menuOpen ? (
-        <div id={menuId} ref={panelRef} className={styles.mobileMenu} role="dialog" aria-modal="true" aria-label="Мобильное меню">
+        <div
+          id={menuId}
+          ref={panelRef}
+          className={styles.mobileMenu}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Мобильное меню"
+        >
           <nav className={styles.mobileNav} aria-label="Разделы">
             {landingDock.map((item) => (
               <a
@@ -263,8 +599,7 @@ function LandingHeader({
             ))}
           </nav>
           <div className={styles.mobileAuth}>
-            <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-            <Link className={styles.btnSecondary} to="/login" onClick={() => setMenuOpen(false)}>
+            <Link className={styles.btnOutline} to="/login" onClick={() => setMenuOpen(false)}>
               Войти
             </Link>
             <Link className={styles.btnPrimary} to="/register" onClick={() => setMenuOpen(false)}>
@@ -277,66 +612,6 @@ function LandingHeader({
   );
 }
 
-function LandingDock({
-  theme,
-  onToggleTheme,
-}: {
-  theme: Theme;
-  onToggleTheme: () => void;
-}) {
-  const [activeId, setActiveId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let frame = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => setActiveId(getActiveSectionId(SECTION_IDS)));
-    };
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', onScroll);
-    };
-  }, []);
-
-  return (
-    <div className={styles.dockWrap}>
-      <div className={styles.dock}>
-        <nav className={styles.dockNav} aria-label="Разделы лендинга">
-          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-          <a
-            href="#landing-main"
-            className={`${styles.dockLink} ${styles.dockHome}`}
-            onClick={(e) => {
-              e.preventDefault();
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-          >
-            Главная
-          </a>
-          {landingDock.map((item) => (
-            <a
-              key={item.id}
-              href={item.href}
-              className={`${styles.dockLink} ${activeId === item.id ? styles.dockLinkActive : ''}`}
-              onClick={(e) => {
-                e.preventDefault();
-                scrollToHash(item.href);
-              }}
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
-        <Link to={landingHero.primaryCta.to} className={styles.dockCta}>
-          {landingHero.primaryCta.label}
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 function SectionLabel({ children, id }: { children: ReactNode; id?: string }) {
   return (
     <p className={styles.sectionLabel} id={id}>
@@ -346,23 +621,10 @@ function SectionLabel({ children, id }: { children: ReactNode; id?: string }) {
 }
 
 function LandingShell() {
-  const [theme, setTheme] = useState<Theme>(readTheme);
   const [featureMode, setFeatureMode] = useState<FeaturesMode>('candidate');
   const featureView = landingFeatures.views[featureMode];
   const [activeStepId, setActiveStepId] = useState(featureView.steps[0].id);
   const activeStep = featureView.steps.find((s) => s.id === activeStepId) ?? featureView.steps[0];
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(THEME_KEY, theme);
-    } catch {
-      /* ignore */
-    }
-  }, [theme]);
-
-  function toggleTheme() {
-    setTheme((t) => (t === 'light' ? 'dark' : 'light'));
-  }
 
   function changeMode(mode: FeaturesMode) {
     setFeatureMode(mode);
@@ -370,83 +632,65 @@ function LandingShell() {
   }
 
   return (
-    <div className={styles.page} data-theme={theme} data-testid="landing-page">
+    <div className={styles.page} data-testid="landing-page">
       <a href="#landing-main" className={styles.skipLink}>
         Перейти к содержимому
       </a>
-      <LandingHeader theme={theme} onToggleTheme={toggleTheme} />
-      <LandingDock theme={theme} onToggleTheme={toggleTheme} />
+      <LandingHeader />
 
       <main id="landing-main">
         <section className={styles.hero} aria-labelledby="landing-hero-heading">
-          <div className={styles.heroStage}>
-            <div className={styles.heroBg} aria-hidden>
-              <img src="/resonance_hero.svg" alt="" className={styles.heroArt} />
-            </div>
-
-            <div className={styles.heroInner}>
-              <div className={styles.heroGrid}>
-                <div className={styles.heroLeft}>
-                  <h1
-                    id="landing-hero-heading"
-                    className={styles.heroTitle}
-                    aria-label={landingHero.label}
-                  >
-                    {landingHero.lines.map((line, i) => (
-                      <span
-                        key={line}
-                        className={styles.heroLine}
-                        style={{ animationDelay: `${0.06 + i * 0.08}s` }}
-                      >
-                        {line}
-                      </span>
-                    ))}
-                  </h1>
-
-                  <div className={styles.ctaRow}>
-                    <Link className={styles.btnPrimary} to={landingHero.primaryCta.to}>
-                      {landingHero.primaryCta.label}
-                    </Link>
-                    <Link className={styles.btnSecondary} to={landingHero.secondaryCta.to}>
-                      {landingHero.secondaryCta.label}
-                    </Link>
-                  </div>
-
-                  <div className={styles.scrollWrap}>
-                    <button
-                      type="button"
-                      className={styles.scrollCue}
-                      onClick={() => scrollToHash(landingHero.scrollTarget)}
-                      aria-label={`${landingHero.scrollLabel} — дальше`}
-                    >
-                      <span className={styles.scrollDot} />
-                      <span>{landingHero.scrollLabel}</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className={styles.heroRight}>
-                  <div className={styles.heroSpacer} aria-hidden />
-                  <p className={styles.heroSubtitle}>{landingHero.subtitle}</p>
-                </div>
-              </div>
-            </div>
+          <div className={styles.heroMedia} aria-hidden>
+            <img src={landingHero.heroImage} alt="" className={styles.heroArt} />
+            <div className={styles.heroScrim} />
           </div>
 
-          <div id="hero-continue" className={styles.heroPeekWrap}>
-            <div className={styles.heroPeek}>
-              <ProductPreview />
-              <div className={styles.heroPeekFade} aria-hidden />
+          <div className={styles.heroInner}>
+            <img
+              src="/fsp-logo.svg"
+              alt="ФСП"
+              className={styles.heroLogo}
+              width={280}
+              height={96}
+              decoding="async"
+            />
+            <p className={styles.heroBrand}>{landingHero.brand}</p>
+            <h1 id="landing-hero-heading" className={styles.heroTitle}>
+              {landingHero.headline}
+            </h1>
+            <p className={styles.heroSubtitle}>{landingHero.subtitle}</p>
+            <div className={styles.ctaRow}>
+              <Link className={styles.btnPrimary} to={landingHero.primaryCta.to}>
+                {landingHero.primaryCta.label}
+              </Link>
+              <Link className={styles.btnSecondary} to={landingHero.secondaryCta.to}>
+                {landingHero.secondaryCta.label}
+              </Link>
             </div>
+            <button
+              type="button"
+              className={styles.scrollCue}
+              onClick={() => scrollToHash(landingHero.scrollTarget)}
+              aria-label={landingHero.scrollLabel}
+            >
+              <span className={styles.scrollLine} aria-hidden />
+              {landingHero.scrollLabel}
+            </button>
           </div>
         </section>
 
         <section id={landingHowItWorks.id} className={styles.section} aria-labelledby="how-heading">
           <div className={styles.container}>
-            <SectionLabel id="how-heading">{landingHowItWorks.label}</SectionLabel>
+            <SectionLabel>{landingHowItWorks.label}</SectionLabel>
+            <h2 id="how-heading" className={styles.sectionTitle}>
+              {landingHowItWorks.title}
+            </h2>
             <ol className={styles.bento}>
               {landingHowItWorks.steps.map((step, index) => (
-                <li key={step.id} className={`${styles.bentoItem} ${styles[BENTO_TONES[index]]}`}>
+                <li
+                  key={step.id}
+                  className={`${styles.bentoItem} ${index === 0 ? styles.bentoHero : ''}`}
+                >
                   <p className={styles.bentoNum}>{step.number}</p>
                   <div className={styles.bentoCopy}>
                     <h3>{step.title}</h3>
@@ -458,17 +702,17 @@ function LandingShell() {
           </div>
         </section>
 
-        <section
-          id={landingRoles.id}
-          className={`${styles.section} ${styles.sectionTight}`}
-          aria-labelledby="roles-heading"
-        >
-          <div className={styles.containerWide}>
-            <SectionLabel>Для кого</SectionLabel>
-            <h2 id="roles-heading" className={styles.displayTitle}>
-              {landingRoles.titleLines.map((line) => (
-                <span key={line}>{line}</span>
-              ))}
+        <section className={`${styles.section} ${styles.sectionAlt}`} aria-label="Превью продукта">
+          <div className={styles.container}>
+            <ProductPreview />
+          </div>
+        </section>
+
+        <section id={landingRoles.id} className={styles.section} aria-labelledby="roles-heading">
+          <div className={styles.container}>
+            <SectionLabel>{landingRoles.label}</SectionLabel>
+            <h2 id="roles-heading" className={styles.sectionTitle}>
+              {landingRoles.title}
             </h2>
             <div className={styles.roles}>
               {landingRoles.cards.map((card) => (
@@ -486,15 +730,13 @@ function LandingShell() {
           </div>
         </section>
 
-        <section id={landingFeatures.id} className={styles.section} aria-labelledby="features-heading">
+        <section id={landingFeatures.id} className={`${styles.section} ${styles.sectionAlt}`} aria-labelledby="features-heading">
           <div className={styles.container}>
             <div className={styles.featuresLayout}>
               <div className={styles.featuresSticky}>
                 <SectionLabel>{landingFeatures.label}</SectionLabel>
-                <h2 id="features-heading" className={`${styles.displayTitle} ${styles.displayUpper}`}>
-                  {landingFeatures.titleLines.map((line) => (
-                    <span key={line}>{line}</span>
-                  ))}
+                <h2 id="features-heading" className={styles.sectionTitle}>
+                  {landingFeatures.title}
                 </h2>
 
                 <div className={styles.modeToggle} role="tablist" aria-label="Сценарий платформы">
@@ -538,7 +780,7 @@ function LandingShell() {
                 <p className={styles.previewCardLabel}>{activeStep.title}</p>
                 <p className={styles.featuresPreviewBody}>{activeStep.description}</p>
                 <div className={styles.miniPreview}>
-                  <ProductPreview compact />
+                  <ProductPreview compact mode={featureMode} stepId={activeStepId} />
                 </div>
               </div>
             </div>
@@ -548,31 +790,93 @@ function LandingShell() {
         <section id={landingCta.id} className={styles.ctaSection} aria-labelledby="cta-heading">
           <div className={styles.container}>
             <div className={styles.ctaBand}>
-              <h2 id="cta-heading" className={styles.ctaTitle}>
-                {landingCta.title}
-              </h2>
-              <div className={styles.ctaSide}>
-                <p>{landingCta.subtitle}</p>
-                <Link className={styles.btnPrimary} to={landingCta.cta.to}>
-                  {landingCta.cta.label}
-                </Link>
+              <div>
+                <h2 id="cta-heading" className={styles.ctaTitle}>
+                  {landingCta.title}
+                </h2>
+                <p className={styles.ctaText}>{landingCta.subtitle}</p>
               </div>
+              <Link className={styles.btnPrimary} to={landingCta.cta.to}>
+                {landingCta.cta.label}
+              </Link>
             </div>
           </div>
         </section>
       </main>
 
       <footer className={styles.footer}>
-        <div className={styles.containerWide}>
-          <div className={styles.footerBrand}>
-            <p className={styles.logoMark}>{landingHero.brand}</p>
-            <p className={styles.footerMuted}>Match Score · ФСП · контакты после accept</p>
+        <div className={styles.container}>
+          <div className={styles.footerMain}>
+            <div className={styles.footerBrandCol}>
+              <img
+                src="/fsp-logo-dark.svg"
+                alt="ФСП"
+                className={styles.footerLogo}
+                width={160}
+                height={55}
+                decoding="async"
+              />
+              <p className={styles.footerBrandMark}>
+                {landingFooter.brand}
+                <span aria-hidden>.</span>
+              </p>
+              <p className={styles.footerTagline}>{landingFooter.tagline}</p>
+              <p className={styles.footerDesc}>{landingFooter.description}</p>
+              <p className={styles.footerPillars}>{landingFooter.pillars}</p>
+            </div>
+
+            <div className={styles.footerCols}>
+              {landingFooter.columns.map((col) => (
+                <nav key={col.title} className={styles.footerCol} aria-label={col.title}>
+                  <p className={styles.footerColTitle}>{col.title}</p>
+                  <ul className={styles.footerList}>
+                    {col.links.map((link) => (
+                      <li key={link.label}>
+                        {'to' in link ? (
+                          <Link className={styles.footerLink} to={link.to}>
+                            {link.label}
+                          </Link>
+                        ) : link.external ? (
+                          <a
+                            className={styles.footerLink}
+                            href={link.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {link.label}
+                            <span className={styles.footerExt} aria-hidden>
+                              ↗
+                            </span>
+                          </a>
+                        ) : (
+                          <a
+                            className={styles.footerLink}
+                            href={link.href}
+                            onClick={(e) => {
+                              if (link.href.startsWith('#')) {
+                                e.preventDefault();
+                                scrollToHash(link.href);
+                              }
+                            }}
+                          >
+                            {link.label}
+                          </a>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              ))}
+            </div>
           </div>
-          <nav className={styles.footerNav} aria-label="Документация">
-            <Link className={styles.footerLink} to="/ui-kit">
-              UI Kit
+
+          <div className={styles.footerBar}>
+            <p className={styles.footerCopy}>{landingFooter.meta.copyright}</p>
+            <p className={styles.footerNote}>{landingFooter.meta.note}</p>
+            <Link className={styles.footerBarLink} to="/ui-kit">
+              Дизайн-система
             </Link>
-          </nav>
+          </div>
         </div>
       </footer>
     </div>

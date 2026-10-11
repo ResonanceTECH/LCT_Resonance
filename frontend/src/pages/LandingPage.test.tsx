@@ -8,16 +8,24 @@ describe('LandingPage', () => {
     renderWithProviders(<LandingPage />, { route: '/' });
 
     expect(screen.getByTestId('landing-page')).toBeInTheDocument();
-    expect(screen.getAllByText('LCT Resonance').length).toBeGreaterThan(0);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Resonance/i);
+    expect(screen.getAllByText('FSP Talent').length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      /подтверждёнными компетенциями/i,
+    );
 
     const startLinks = screen.getAllByRole('link', { name: 'Начать' });
     expect(startLinks.length).toBeGreaterThan(0);
     expect(startLinks.every((link) => link.getAttribute('href') === '/register')).toBe(true);
 
-    expect(screen.getByRole('link', { name: 'Demo-вход' })).toHaveAttribute('href', '/login');
-    expect(screen.getByText('Как это работает')).toBeInTheDocument();
-    expect(screen.getAllByText('Talent Pool').length).toBeGreaterThan(0);
-    expect(screen.getByRole('navigation', { name: 'Разделы лендинга' })).toBeInTheDocument();
+    const demoLinks = screen.getAllByRole('link', { name: 'Демовход' });
+    expect(demoLinks.length).toBeGreaterThan(0);
+    expect(demoLinks.every((link) => link.getAttribute('href') === '/login')).toBe(true);
+
+    expect(screen.getAllByText('Как это работает').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Пул кандидатов').length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { name: 'Четыре шага до сигнала' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Открыть меню' })).toBeInTheDocument();
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+    expect(screen.getByText('© 2026 FSP Talent')).toBeInTheDocument();
   });
 });
