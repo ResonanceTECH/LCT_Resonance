@@ -1,4 +1,7 @@
 import type {
+  AdminAssessmentsResponse,
+  AdminCategoriesResponse,
+  AdminEvent,
   AppNotification,
   AuthUser,
   CandidateCompareResponse,
@@ -23,10 +26,40 @@ function seedUsers(): AuthUser[] {
       displayName: 'Анна Ковалёва',
     },
     {
+      id: 'user-cand-2',
+      email: 'maxim@demo.ru',
+      role: 'candidate',
+      displayName: 'Максим Орлов',
+    },
+    {
+      id: 'user-cand-3',
+      email: 'elena@demo.ru',
+      role: 'candidate',
+      displayName: 'Елена Ветрова',
+    },
+    {
+      id: 'user-cand-4',
+      email: 'denis@demo.ru',
+      role: 'candidate',
+      displayName: 'Денис Крылов',
+    },
+    {
+      id: 'user-cand-5',
+      email: 'sofia@demo.ru',
+      role: 'candidate',
+      displayName: 'София Белова',
+    },
+    {
       id: 'user-emp-1',
       email: 'employer@demo.ru',
       role: 'employer',
       displayName: 'Игорь Смирнов',
+    },
+    {
+      id: 'user-emp-2',
+      email: 'hr@demo.ru',
+      role: 'employer',
+      displayName: 'Мария Кузнецова',
     },
     {
       id: 'user-admin-1',
@@ -36,6 +69,20 @@ function seedUsers(): AuthUser[] {
     },
   ];
 }
+
+/** Demo registration timestamps for admin user table. */
+export const userCreatedAt: Record<string, string> = {
+  'user-cand-1': '2026-08-12T09:00:00.000Z',
+  'user-cand-2': '2026-08-20T11:30:00.000Z',
+  'user-cand-3': '2026-09-01T14:15:00.000Z',
+  'user-cand-4': '2026-09-10T08:40:00.000Z',
+  'user-cand-5': '2026-09-22T16:20:00.000Z',
+  'user-emp-1': '2026-08-05T10:00:00.000Z',
+  'user-emp-2': '2026-09-18T12:00:00.000Z',
+  'user-admin-1': '2026-07-01T08:00:00.000Z',
+};
+
+export const blockReasons: Record<string, string> = {};
 
 function seedProfiles(): CandidateProfile[] {
   return [
@@ -291,6 +338,7 @@ export function resetMockDb() {
   offers.splice(0, offers.length, ...structuredClone(seedOffers()));
   shortlist.splice(0, shortlist.length, 'cand-2');
   blockedUserIds.splice(0, blockedUserIds.length);
+  for (const key of Object.keys(blockReasons)) delete blockReasons[key];
   notificationReadIds.clear();
   extraNotifications.splice(0, extraNotifications.length);
 
@@ -608,3 +656,223 @@ export const testQuestions = [
     correctOptionId: 'b',
   },
 ];
+
+export function seedAdminEvents(): AdminEvent[] {
+  return [
+    {
+      id: 'evt-1',
+      type: 'test_completed',
+      title: 'Кандидат завершил тестирование',
+      description: 'Анна Ковалёва · Frontend / Middle',
+      createdAt: '2026-10-10T15:20:00.000Z',
+      href: '/admin/assessments',
+    },
+    {
+      id: 'evt-2',
+      type: 'offer_sent',
+      title: 'Работодатель отправил приглашение',
+      description: 'Resonance Labs → Frontend Engineer',
+      createdAt: '2026-10-05T14:00:00.000Z',
+      href: '/admin/offers',
+    },
+    {
+      id: 'evt-3',
+      type: 'user_registered',
+      title: 'Зарегистрирован новый пользователь',
+      description: 'София Белова · кандидат',
+      createdAt: '2026-09-22T16:20:00.000Z',
+      href: '/admin/users',
+    },
+    {
+      id: 'evt-4',
+      type: 'category_confirmed',
+      title: 'Подтверждена профессиональная категория',
+      description: 'Frontend / Middle',
+      createdAt: '2026-09-12T10:05:00.000Z',
+      href: '/admin/categories',
+    },
+  ];
+}
+
+export function seedAdminAssessments(): AdminAssessmentsResponse {
+  return {
+    catalog: [
+      {
+        id: 'test-fe-junior',
+        specialization: 'Frontend',
+        grade: 'junior',
+        questionCount: 20,
+        status: 'active',
+        topics: [
+          { name: 'HTML/CSS', difficulty: 'easy', count: 6 },
+          { name: 'JavaScript', difficulty: 'medium', count: 8 },
+          { name: 'React basics', difficulty: 'medium', count: 6 },
+        ],
+      },
+      {
+        id: 'test-fe-middle',
+        specialization: 'Frontend',
+        grade: 'middle',
+        questionCount: 24,
+        status: 'active',
+        topics: [
+          { name: 'React', difficulty: 'medium', count: 8 },
+          { name: 'TypeScript', difficulty: 'medium', count: 8 },
+          { name: 'Performance', difficulty: 'hard', count: 8 },
+        ],
+      },
+      {
+        id: 'test-be-middle',
+        specialization: 'Backend',
+        grade: 'middle',
+        questionCount: 22,
+        status: 'active',
+        topics: [
+          { name: 'API design', difficulty: 'medium', count: 8 },
+          { name: 'SQL', difficulty: 'medium', count: 7 },
+          { name: 'Concurrency', difficulty: 'hard', count: 7 },
+        ],
+      },
+      {
+        id: 'test-fs-senior',
+        specialization: 'Fullstack',
+        grade: 'senior',
+        questionCount: 28,
+        status: 'draft',
+        topics: [
+          { name: 'Architecture', difficulty: 'hard', count: 10 },
+          { name: 'DevOps', difficulty: 'hard', count: 8 },
+          { name: 'Frontend', difficulty: 'medium', count: 10 },
+        ],
+      },
+    ],
+    templates: [
+      {
+        id: 'tpl-1',
+        specialization: 'Frontend',
+        topic: 'React',
+        difficulty: 'medium',
+        parameterized: true,
+        active: true,
+        promptPreview: 'Что произойдёт при рендере списка без стабильного key?',
+      },
+      {
+        id: 'tpl-2',
+        specialization: 'Frontend',
+        topic: 'TypeScript',
+        difficulty: 'hard',
+        parameterized: true,
+        active: true,
+        promptPreview: 'Как сузить union по discriminant field {{field}}?',
+      },
+      {
+        id: 'tpl-3',
+        specialization: 'Backend',
+        topic: 'SQL',
+        difficulty: 'medium',
+        parameterized: false,
+        active: true,
+        promptPreview: 'Какой индекс ускорит поиск по (user_id, created_at)?',
+      },
+      {
+        id: 'tpl-4',
+        specialization: 'Backend',
+        topic: 'Concurrency',
+        difficulty: 'hard',
+        parameterized: true,
+        active: false,
+        promptPreview: 'Выберите корректную модель изоляции для {{scenario}}.',
+      },
+    ],
+    attempts: [
+      {
+        id: 'att-1',
+        userId: 'user-cand-1',
+        displayName: 'Анна Ковалёва',
+        specialization: 'Frontend',
+        grade: 'middle',
+        score: 82,
+        maxScore: 100,
+        passed: true,
+        completedAt: '2026-09-12T10:00:00.000Z',
+        nextRetestAt: '2026-12-12T10:00:00.000Z',
+      },
+      {
+        id: 'att-2',
+        userId: 'user-cand-3',
+        displayName: 'Елена Ветрова',
+        specialization: 'Frontend',
+        grade: 'junior',
+        score: 54,
+        maxScore: 100,
+        passed: false,
+        completedAt: '2026-10-01T09:30:00.000Z',
+        nextRetestAt: '2026-10-15T09:30:00.000Z',
+      },
+      {
+        id: 'att-3',
+        userId: 'user-cand-4',
+        displayName: 'Денис Крылов',
+        specialization: 'Fullstack',
+        grade: 'middle',
+        score: 71,
+        maxScore: 100,
+        passed: true,
+        completedAt: '2026-10-08T18:00:00.000Z',
+        nextRetestAt: '2027-01-08T18:00:00.000Z',
+      },
+    ],
+    stats: {
+      successRate: 0.67,
+      totalAttempts: 3,
+      scoreDistribution: [
+        { bucket: '0–49', count: 0 },
+        { bucket: '50–69', count: 1 },
+        { bucket: '70–84', count: 1 },
+        { bucket: '85–100', count: 1 },
+      ],
+    },
+  };
+}
+
+export function seedAdminCategories(): AdminCategoriesResponse {
+  return {
+    categories: [
+      { id: 'cat-fe-junior', specialization: 'Frontend', grade: 'junior', confirmedCandidates: 0 },
+      { id: 'cat-fe-middle', specialization: 'Frontend', grade: 'middle', confirmedCandidates: 1 },
+      { id: 'cat-fe-senior', specialization: 'Frontend', grade: 'senior', confirmedCandidates: 0 },
+      { id: 'cat-be-middle', specialization: 'Backend', grade: 'middle', confirmedCandidates: 0 },
+      { id: 'cat-be-senior', specialization: 'Backend', grade: 'senior', confirmedCandidates: 0 },
+      { id: 'cat-fs-middle', specialization: 'Fullstack', grade: 'middle', confirmedCandidates: 0 },
+    ],
+    specializations: [
+      { id: 'spec-fe', name: 'Frontend' },
+      { id: 'spec-be', name: 'Backend' },
+      { id: 'spec-fs', name: 'Fullstack' },
+      { id: 'spec-mobile', name: 'Mobile' },
+      { id: 'spec-devops', name: 'DevOps' },
+      { id: 'spec-ds', name: 'Data Science' },
+      { id: 'spec-qa', name: 'QA' },
+    ],
+    grades: [
+      { id: 'g-junior', code: 'junior', name: 'Junior' },
+      { id: 'g-middle', code: 'middle', name: 'Middle' },
+      { id: 'g-senior', code: 'senior', name: 'Senior' },
+    ],
+    skills: [
+      { id: 'sk-react', name: 'React', aliases: ['React.js', 'ReactJS'] },
+      { id: 'sk-ts', name: 'TypeScript', aliases: ['TS'] },
+      { id: 'sk-go', name: 'Go', aliases: ['Golang'] },
+      { id: 'sk-py', name: 'Python' },
+      { id: 'sk-pg', name: 'PostgreSQL', aliases: ['Postgres'] },
+      { id: 'sk-node', name: 'Node.js', aliases: ['Node'] },
+    ],
+    industries: [
+      { id: 'ind-fintech', name: 'Финтех' },
+      { id: 'ind-edtech', name: 'EdTech' },
+      { id: 'ind-ecommerce', name: 'E-commerce' },
+      { id: 'ind-gaming', name: 'Геймдев' },
+      { id: 'ind-enterprise', name: 'Enterprise' },
+    ],
+  };
+}

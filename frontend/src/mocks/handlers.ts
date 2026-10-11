@@ -12,6 +12,7 @@ import type {
 import {
   DEMO_PASSWORD,
   applicationsByCandidate,
+  blockReasons,
   blockedUserIds,
   buildNotificationsForUser,
   computeCompare,
@@ -25,8 +26,12 @@ import {
   parseVacancyText,
   profiles,
   savedVacanciesByCandidate,
+  seedAdminAssessments,
+  seedAdminCategories,
+  seedAdminEvents,
   shortlist,
   testQuestions,
+  userCreatedAt,
   users,
   vacancies,
 } from '@/mocks/fixtures';
@@ -625,6 +630,9 @@ export const handlers = [
     if (auth.user!.role !== 'admin') {
       return HttpResponse.json({ message: 'Только для администратора' }, { status: 403 });
     }
+    const assessments = seedAdminAssessments();
+    const categories = seedAdminCategories();
+    const confirmed = profiles.filter((p) => p.confirmedGrade).length;
     return HttpResponse.json({
       usersTotal: users.filter((u) => u.role !== 'admin').length,
       candidates: users.filter((u) => u.role === 'candidate').length,
@@ -633,6 +641,11 @@ export const handlers = [
       offersOpen: offers.filter((o) => o.status === 'new' || o.status === 'viewed').length,
       offersAccepted: offers.filter((o) => o.status === 'accepted').length,
       blockedUsers: blockedUserIds.length,
+      confirmedCategories: confirmed || categories.categories.reduce((n, c) => n + c.confirmedCandidates, 0),
+      assessmentsCompleted: assessments.stats.totalAttempts,
+      offersTotal: offers.length,
+      recentEvents: seedAdminEvents(),
+      apiStatus: 'ok',
     });
   }),
 
@@ -646,10 +659,24 @@ export const handlers = [
     return HttpResponse.json(
       users
         .filter((u) => u.role !== 'admin')
-        .map((u) => ({
-          ...u,
-          status: blockedUserIds.includes(u.id) ? 'blocked' : 'active',
-        })),
+        .map((u) => {
+          const profile = profiles.find((p) => p.userId === u.id);
+          let testStatus: 'none' | 'passed' | 'failed' | 'in_progress' = 'none';
+          if (profile?.testResult) {
+            testStatus = profile.testResult.gradeConfirmed ? 'passed' : 'failed';
+          }
+          return {
+            ...u,
+            status: blockedUserIds.includes(u.id) ? 'blocked' : 'active',
+            createdAt: userCreatedAt[u.id],
+            specialization: profile?.specialization ?? null,
+            confirmedGrade: profile?.confirmedGrade ?? null,
+            claimedGrade: profile?.claimedGrade ?? null,
+            testStatus,
+            hasFspId: Boolean(profile?.hasFspAchievements || profile?.fspSyncedAt),
+            blockReason: blockReasons[u.id] ?? null,
+          };
+        }),
     );
   }),
 
@@ -665,13 +692,31 @@ export const handlers = [
     if (!user || user.role === 'admin') {
       return HttpResponse.json({ message: 'Пользователь не найден' }, { status: 404 });
     }
-    const body = (await request.json()) as { status: 'active' | 'blocked' };
+    const body = (await request.json()) as { status: 'active' | 'blocked'; reason?: string };
     const idx = blockedUserIds.indexOf(userId);
     if (body.status === 'blocked' && idx < 0) blockedUserIds.push(userId);
-    if (body.status === 'active' && idx >= 0) blockedUserIds.splice(idx, 1);
+    if (body.status === 'blocked' && body.reason?.trim()) {
+      blockReasons[userId] = body.reason.trim();
+    }
+    if (body.status === 'active' && idx >= 0) {
+      blockedUserIds.splice(idx, 1);
+      delete blockReasons[userId];
+    }
+    const profile = profiles.find((p) => p.userId === userId);
     return HttpResponse.json({
       ...user,
       status: blockedUserIds.includes(userId) ? 'blocked' : 'active',
+      createdAt: userCreatedAt[userId],
+      specialization: profile?.specialization ?? null,
+      confirmedGrade: profile?.confirmedGrade ?? null,
+      claimedGrade: profile?.claimedGrade ?? null,
+      testStatus: profile?.testResult
+        ? profile.testResult.gradeConfirmed
+          ? 'passed'
+          : 'failed'
+        : 'none',
+      hasFspId: Boolean(profile?.hasFspAchievements || profile?.fspSyncedAt),
+      blockReason: blockReasons[userId] ?? null,
     });
   }),
 
@@ -693,6 +738,35 @@ export const handlers = [
       return HttpResponse.json({ message: 'Только для администратора' }, { status: 403 });
     }
     return HttpResponse.json(vacancies);
+  }),
+
+  http.get(`${API}/admin/assessments`, async ({ request }) => {
+    await delay(200);
+    const auth = requireUser(request);
+    if ('error' in auth && auth.error) return auth.error;
+    if (auth.user!.role !== 'admin') {
+      return HttpResponse.json({ message: 'Только для администратора' }, { status: 403 });
+    }
+    return HttpResponse.json(seedAdminAssessments());
+  }),
+
+  http.get(`${API}/admin/categories`, async ({ request }) => {
+    await delay(200);
+    const auth = requireUser(request);
+    if ('error' in auth && auth.error) return auth.error;
+    if (auth.user!.role !== 'admin') {
+      return HttpResponse.json({ message: 'Только для администратора' }, { status: 403 });
+    }
+    const data = seedAdminCategories();
+    data.categories = data.categories.map((cat) => ({
+      ...cat,
+      confirmedCandidates: profiles.filter(
+        (p) =>
+          p.specialization === cat.specialization &&
+          p.confirmedGrade === cat.grade,
+      ).length,
+    }));
+    return HttpResponse.json(data);
   }),
 
   http.get(`${API}/dashboard/candidate`, async ({ request }) => {
