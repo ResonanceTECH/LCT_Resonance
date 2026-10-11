@@ -27,6 +27,13 @@ import { EmployerComparePage } from '@/pages/employer/ComparePage';
 import { CareerPassportPage } from '@/pages/public/CareerPassportPage';
 import { LegalPage } from '@/pages/public/LegalPage';
 import { UiKitPage } from '@/pages/public/UiKitPage';
+import {
+  ForbiddenPage,
+  MaintenancePage,
+  NotFoundPage,
+  OfflinePage,
+  ServerErrorPage,
+} from '@/pages/public/status/StatusPages';
 import { NotificationsPage } from '@/pages/shared/NotificationsPage';
 import { AdminOverviewPage } from '@/pages/admin/OverviewPage';
 import { AdminUsersPage } from '@/pages/admin/UsersPage';
@@ -41,6 +48,10 @@ export const router = createBrowserRouter([
   { path: '/terms', element: <LegalPage slug="terms" /> },
   { path: '/privacy', element: <LegalPage slug="privacy" /> },
   { path: '/p/:slug', element: <CareerPassportPage /> },
+  { path: '/403', element: <ForbiddenPage /> },
+  { path: '/500', element: <ServerErrorPage /> },
+  { path: '/503', element: <MaintenancePage /> },
+  { path: '/offline', element: <OfflinePage /> },
   {
     element: <GuestGuard />,
     children: [
@@ -116,6 +127,6 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  { path: '*', element: <Navigate to="/" replace /> },
+  { path: '*', element: <NotFoundPage /> },
 ]);
 

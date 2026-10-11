@@ -97,6 +97,7 @@ Aliases для legacy: `--accent`, `--ink`, `--surface`, `--radius` → map на
 | `Card` | `default \| compact \| hero` · optional `to` |
 | `Tabs` / `Modal` / `ProgressBar` | |
 | `Loader` / `Skeleton` / `EmptyState` / `ErrorState` | |
+| `StatusPage` | Full-page 404 / 403 / 500 / 503 / offline · presets в `STATUS_PRESETS` |
 
 Кнопки: height 36/44/48, radius 12, Golos 14/600.  
 Focus: `outline: 3px solid var(--primary-200)`.
@@ -132,7 +133,21 @@ Props = DTO. Skill chips: `.skillChip` (`#F2F0FF` / `#3324E6`).
 
 ---
 
-## 6. Acceptance
+## 6. System pages
+
+| Route | Page |
+|-------|------|
+| `*` (unknown) | 404 `NotFoundPage` |
+| `/403` | Forbidden · также `RoleGuard` при wrong role |
+| `/500` | Server error |
+| `/503` | Maintenance |
+| `/offline` | Offline |
+
+Компонент: `shared/ui/StatusPage` · превью в `/ui-kit#system`.
+
+---
+
+## 7. Acceptance
 
 - `/ui-kit` отражает актуальную систему.
 - Все экраны на FSP tokens.

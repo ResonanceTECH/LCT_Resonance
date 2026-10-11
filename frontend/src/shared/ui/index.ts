@@ -15,5 +15,16 @@ export { ProgressBar } from './ProgressBar';
 export { EmptyState } from './EmptyState';
 export { ErrorState } from './ErrorState';
 export { Modal } from './Modal';
+export {
+  StatusPage,
+  StatusPageFromPreset,
+  STATUS_PRESETS,
+} from './StatusPage';
+export type {
+  StatusAction,
+  StatusPageProps,
+  StatusPresetKey,
+  StatusTone,
+} from './StatusPage';
 export { default as uiStyles } from './ui.module.css';
 

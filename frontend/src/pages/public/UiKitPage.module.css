@@ -954,3 +954,59 @@
 .gap {
   height: var(--space-4);
 }
+
+.systemLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.systemLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 12px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border-default);
+  background: var(--background-card);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  transition:
+    border-color 150ms var(--ease),
+    background 150ms var(--ease);
+}
+
+.systemLink:hover {
+  border-color: var(--border-hover);
+  background: var(--background-hover);
+}
+
+.systemLink:focus-visible {
+  outline: 3px solid var(--primary-200);
+  outline-offset: 2px;
+}
+
+.systemLink span {
+  color: var(--text-tertiary);
+  font-family: var(--display);
+}
+
+.systemGrid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 900px) {
+  .systemGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1280px) {
+  .systemGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

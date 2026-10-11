@@ -19,7 +19,7 @@ export function RoleGuard({ allow }: { allow: Role[] }) {
   if (isLoading) return <Loader />;
   if (!user) return <Navigate to="/login" replace />;
   if (!allow.includes(user.role)) {
-    return <Navigate to={roleHome(user.role)} replace />;
+    return <Navigate to="/403" replace />;
   }
   return <Outlet />;
 }
@@ -32,3 +32,4 @@ export function GuestGuard() {
   }
   return <Outlet />;
 }
+

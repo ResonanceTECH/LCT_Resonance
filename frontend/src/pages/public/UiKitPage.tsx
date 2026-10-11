@@ -49,9 +49,11 @@ import {
   Radio,
   Select,
   Skeleton,
+  StatusPageFromPreset,
   Switch,
   Tabs,
   Textarea,
+  type StatusPresetKey,
 } from '@/shared/ui';
 import styles from './UiKitPage.module.css';
 
@@ -69,8 +71,17 @@ const NAV = [
   { id: 'testing', label: 'Testing' },
   { id: 'offer', label: 'Offer form' },
   { id: 'landing', label: 'Landing' },
+  { id: 'system', label: 'System pages' },
   { id: 'rules', label: 'Rules' },
 ] as const;
+
+const SYSTEM_PAGES: { preset: StatusPresetKey; route: string; label: string }[] = [
+  { preset: 'notFound', route: '/this-route-does-not-exist', label: '404 · Not found' },
+  { preset: 'forbidden', route: '/403', label: '403 · Forbidden' },
+  { preset: 'serverError', route: '/500', label: '500 · Server error' },
+  { preset: 'maintenance', route: '/503', label: '503 · Maintenance' },
+  { preset: 'offline', route: '/offline', label: 'Offline' },
+];
 
 const BRAND_COLORS = [
   { name: 'brand-primary', value: '#402FFF', varName: '--brand-primary' },
@@ -271,7 +282,7 @@ export function UiKitPage() {
               <span className={styles.statLabel}>color tokens</span>
             </div>
             <div className={styles.stat}>
-              <span className={styles.statValue}>17</span>
+              <span className={styles.statValue}>18</span>
               <span className={styles.statLabel}>shared UI</span>
             </div>
             <div className={styles.stat}>
@@ -926,6 +937,36 @@ import { MatchScore } from '@/entities/ui/MatchScore';
             <p className={styles.footerNote}>
               Landing: sticky topbar 72px, bento 16px, buttons 12px / 44px. Красный #EC1D35 — только
               фирменные акценты и destructive, не primary CTA.
+            </p>
+          </Section>
+
+          <Section
+            id="system"
+            title="System pages"
+            hint="shared/ui/StatusPage · 404 / 403 / 500 / 503 / offline · catch-all * → 404"
+          >
+            <div className={styles.systemLinks}>
+              {SYSTEM_PAGES.map((item) => (
+                <Link key={item.preset} to={item.route} className={styles.systemLink}>
+                  {item.label}
+                  <span aria-hidden>→</span>
+                </Link>
+              ))}
+            </div>
+            <div className={styles.gap} />
+            <div className={styles.systemGrid}>
+              {SYSTEM_PAGES.map((item) => (
+                <Canvas key={item.preset} label={item.label}>
+                  <StatusPageFromPreset preset={item.preset} compact />
+                </Canvas>
+              ))}
+            </div>
+            <p className={styles.footerNote}>
+              Роуты: <code className={styles.codeChip}>/403</code>{' '}
+              <code className={styles.codeChip}>/500</code>{' '}
+              <code className={styles.codeChip}>/503</code>{' '}
+              <code className={styles.codeChip}>/offline</code> · неизвестный URL → 404 · wrong role →
+              RoleGuard → /403.
             </p>
           </Section>
 
