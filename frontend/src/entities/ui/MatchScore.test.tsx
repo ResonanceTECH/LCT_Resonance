@@ -18,7 +18,7 @@ const match: CandidateMatch = {
 describe('MatchScore', () => {
   it('renders backend score and positive reasons', () => {
     render(<MatchScore match={match} />);
-    expect(screen.getByText('Match 91%')).toBeInTheDocument();
+    expect(screen.getByText('Соответствие 91%')).toBeInTheDocument();
     expect(screen.getByText(/совпадает специализация Frontend/)).toBeInTheDocument();
   });
 

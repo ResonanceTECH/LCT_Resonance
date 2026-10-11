@@ -2,6 +2,7 @@ import type { CandidateMatch, CandidateProfile as Profile, FspAchievement } from
 import {
   formatGrade,
   formatReadiness,
+  formatSpecialization,
   formatWorkFormat,
 } from '@/shared/lib/formatters';
 import { Badge, uiStyles } from '@/shared/ui';
@@ -16,33 +17,38 @@ export function CandidateProfileView({
   achievements = [],
   match,
   mode,
+  hideIntro = false,
 }: {
   profile: Profile;
   achievements?: FspAchievement[];
   match?: CandidateMatch;
   mode: 'self' | 'employer';
+  /** Skip name/about card when the parent already renders a hero. */
+  hideIntro?: boolean;
 }) {
   return (
     <div className="stack">
-      <section className="section-card">
-        <div className="row" style={{ justifyContent: 'space-between' }}>
-          <div>
-            <h2 style={{ marginBottom: 0 }}>{profile.fullName}</h2>
-            <p style={{ margin: '0.35rem 0 0' }}>
-              {profile.desiredPosition ?? profile.specialization}
-              {profile.city ? ` · ${profile.city}` : ''}
-            </p>
+      {hideIntro ? null : (
+        <section className="section-card">
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <div>
+              <h2 style={{ marginBottom: 0 }}>{profile.fullName}</h2>
+              <p style={{ margin: '0.35rem 0 0' }}>
+                {profile.desiredPosition ?? formatSpecialization(profile.specialization)}
+                {profile.city ? ` · ${profile.city}` : ''}
+              </p>
+            </div>
+            <Badge tone="accent">{formatReadiness(profile.readiness)}</Badge>
           </div>
-          <Badge tone="accent">{formatReadiness(profile.readiness)}</Badge>
-        </div>
-        {profile.about ? <p style={{ marginTop: '1rem' }}>{profile.about}</p> : null}
-      </section>
+          {profile.about ? <p style={{ marginTop: '1rem' }}>{profile.about}</p> : null}
+        </section>
+      )}
 
       <div className="grid-2">
         <section className="section-card">
           <h3>Специализация и уровень</h3>
           <div className="row">
-            <Badge>{profile.specialization}</Badge>
+            <Badge>{formatSpecialization(profile.specialization)}</Badge>
             <div>
               <div className="muted" style={{ fontSize: '0.85rem' }}>
                 Заявленный уровень

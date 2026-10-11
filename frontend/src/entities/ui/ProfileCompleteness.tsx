@@ -10,7 +10,7 @@ export function ProfileCompletenessCard({ data }: { data: CompletenessData }) {
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <div>
           <h2 style={{ margin: 0 }}>Заполненность профиля</h2>
-          <p style={{ margin: '0.25rem 0 0' }}>Чем полнее профиль — тем выше Match Score.</p>
+          <p style={{ margin: '0.25rem 0 0' }}>Чем полнее профиль — тем выше оценка соответствия.</p>
         </div>
         <strong style={{ fontSize: '1.6rem' }}>{data.percent}%</strong>
       </div>

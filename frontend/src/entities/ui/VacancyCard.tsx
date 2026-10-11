@@ -1,6 +1,7 @@
 import type { VacancyWithMatch } from '@/entities/types';
 import {
   formatGrade,
+  formatSpecialization,
   formatVacancyStatus,
   formatWorkFormat,
 } from '@/shared/lib/formatters';
@@ -15,7 +16,7 @@ export function VacancyCard({ vacancy, to }: { vacancy: VacancyWithMatch; to?: s
         <div className="row">
           {vacancy.match ? (
             <span data-testid="vacancy-match-badge">
-              <Badge tone="success">Match {vacancy.match.score}%</Badge>
+              <Badge tone="success">Соответствие {vacancy.match.score}%</Badge>
             </span>
           ) : null}
           {vacancy.saved ? <Badge tone="accent">В избранном</Badge> : null}
@@ -26,7 +27,7 @@ export function VacancyCard({ vacancy, to }: { vacancy: VacancyWithMatch; to?: s
         </div>
       </div>
       <p style={{ margin: '0.4rem 0' }}>
-        {vacancy.specialization} · {formatGrade(vacancy.requiredGrade)} ·{' '}
+        {formatSpecialization(vacancy.specialization)} · {formatGrade(vacancy.requiredGrade)} ·{' '}
         {formatWorkFormat(vacancy.workFormat)}
       </p>
       <strong>

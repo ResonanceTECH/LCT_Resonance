@@ -12,7 +12,7 @@ type Props = {
 export function SkillRadar({ radar, size = 280 }: Props) {
   const axes = radar.axes;
   if (axes.length === 0) {
-    return <p className="muted">Нет данных для Skill Radar.</p>;
+    return <p className="muted">Нет данных для радара навыков.</p>;
   }
 
   const cx = size / 2;
@@ -40,16 +40,16 @@ export function SkillRadar({ radar, size = 280 }: Props) {
 
   return (
     <div className="section-card" data-testid="skill-radar">
-      <h3>Skill Radar</h3>
+      <h3>Радар навыков</h3>
       <p className="muted" style={{ marginTop: 0 }}>
-        Оценки рассчитаны на Backend/ML. Frontend только отображает.
+        Оценки рассчитаны на сервере — здесь только отображение.
       </p>
       <svg
         width={size}
         height={size}
         viewBox={`0 0 ${size} ${size}`}
         role="img"
-        aria-label={`Skill radar для кандидата ${radar.candidateId}`}
+        aria-label={`Радар навыков кандидата ${radar.candidateId}`}
       >
         {levels.map((level) => (
           <polygon
