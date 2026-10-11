@@ -338,6 +338,22 @@ export type CandidateCompareResponse = {
   radars: SkillRadar[];
 };
 
+export type AdminEventType =
+  | 'test_completed'
+  | 'offer_sent'
+  | 'user_registered'
+  | 'user_blocked'
+  | 'category_confirmed';
+
+export type AdminEvent = {
+  id: string;
+  type: AdminEventType;
+  title: string;
+  description?: string;
+  createdAt: string;
+  href?: string;
+};
+
 export type AdminOverview = {
   usersTotal: number;
   candidates: number;
@@ -346,10 +362,91 @@ export type AdminOverview = {
   offersOpen: number;
   offersAccepted: number;
   blockedUsers: number;
+  /** Confirmed professional categories (optional — MSW / future Backend). */
+  confirmedCategories?: number;
+  /** Completed assessment sessions. */
+  assessmentsCompleted?: number;
+  /** All invitations / offers total. */
+  offersTotal?: number;
+  recentEvents?: AdminEvent[];
+  apiStatus?: 'ok' | 'degraded' | 'down';
 };
 
 export type AdminUserRow = AuthUser & {
   status: 'active' | 'blocked';
+  createdAt?: string;
+  specialization?: string | null;
+  confirmedGrade?: Grade | null;
+  claimedGrade?: Grade | null;
+  testStatus?: 'none' | 'passed' | 'failed' | 'in_progress';
+  hasFspId?: boolean;
+  blockReason?: string | null;
+};
+
+export type AdminTestCatalogItem = {
+  id: string;
+  specialization: string;
+  grade: Grade;
+  questionCount: number;
+  status: 'active' | 'draft' | 'archived';
+  topics: { name: string; difficulty: 'easy' | 'medium' | 'hard'; count: number }[];
+};
+
+export type AdminQuestionTemplate = {
+  id: string;
+  specialization: string;
+  topic: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  parameterized: boolean;
+  active: boolean;
+  promptPreview: string;
+};
+
+export type AdminAttemptRow = {
+  id: string;
+  userId: string;
+  displayName: string;
+  specialization: string;
+  grade: Grade;
+  score: number;
+  maxScore: number;
+  passed: boolean;
+  completedAt: string;
+  nextRetestAt?: string | null;
+};
+
+export type AdminAssessmentStats = {
+  successRate: number;
+  totalAttempts: number;
+  scoreDistribution: { bucket: string; count: number }[];
+};
+
+export type AdminAssessmentsResponse = {
+  catalog: AdminTestCatalogItem[];
+  templates: AdminQuestionTemplate[];
+  attempts: AdminAttemptRow[];
+  stats: AdminAssessmentStats;
+};
+
+export type AdminCategoryRow = {
+  id: string;
+  specialization: string;
+  grade: Grade;
+  confirmedCandidates: number;
+};
+
+export type AdminTaxonomySkill = {
+  id: string;
+  name: string;
+  aliases?: string[];
+};
+
+export type AdminCategoriesResponse = {
+  categories: AdminCategoryRow[];
+  specializations: { id: string; name: string }[];
+  grades: { id: string; code: Grade; name: string }[];
+  skills: AdminTaxonomySkill[];
+  industries: { id: string; name: string }[];
 };
 
 /** Backend AI draft for vacancy form — frontend only fills UI. */

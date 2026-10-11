@@ -69,21 +69,21 @@ export function SkillRadar({ radar, size = 280 }: Props) {
           const label = point(i, 118);
           return (
             <g key={axis.skill}>
-              <line x1={cx} y1={cy} x2={edge.x} y2={edge.y} stroke="rgba(20,32,28,0.2)" />
+              <line x1={cx} y1={cy} x2={edge.x} y2={edge.y} stroke="#EDEDED" />
               <text
                 x={label.x}
                 y={label.y}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fontSize="11"
-                fill="#14201c"
+                fill="#565966"
               >
                 {axis.skill} ({axis.score})
               </text>
             </g>
           );
         })}
-        <polygon points={polygon} fill="rgba(13,122,95,0.28)" stroke="#0d7a5f" strokeWidth="2" />
+        <polygon points={polygon} fill="rgba(64,47,255,0.22)" stroke="#402FFF" strokeWidth="2" />
       </svg>
     </div>
   );
