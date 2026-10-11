@@ -31,6 +31,8 @@ import { AdminOverviewPage } from '@/pages/admin/OverviewPage';
 import { AdminUsersPage } from '@/pages/admin/UsersPage';
 import { AdminOffersPage } from '@/pages/admin/OffersPage';
 import { AdminVacanciesPage } from '@/pages/admin/VacanciesPage';
+import { AdminAssessmentsPage } from '@/pages/admin/AssessmentsPage';
+import { AdminCategoriesPage } from '@/pages/admin/CategoriesPage';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -98,8 +100,11 @@ export const router = createBrowserRouter([
             path: '/admin',
             element: <AdminLayout />,
             children: [
-              { index: true, element: <AdminOverviewPage /> },
+              { index: true, element: <Navigate to="/admin/overview" replace /> },
+              { path: 'overview', element: <AdminOverviewPage /> },
               { path: 'users', element: <AdminUsersPage /> },
+              { path: 'assessments', element: <AdminAssessmentsPage /> },
+              { path: 'categories', element: <AdminCategoriesPage /> },
               { path: 'offers', element: <AdminOffersPage /> },
               { path: 'vacancies', element: <AdminVacanciesPage /> },
             ],

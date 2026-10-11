@@ -6,6 +6,12 @@ import { authApi } from '@/shared/api/endpoints';
 import { getErrorMessage } from '@/shared/api/errors';
 import { Button } from '@/shared/ui';
 
+const ROLE_LABEL: Record<string, string> = {
+  candidate: 'Кандидат',
+  employer: 'Работодатель',
+  admin: 'Администратор',
+};
+
 /** Backend rule: an unverified employer cannot send offers, a candidate is not in search. */
 function VerifyEmailBanner() {
   const { user } = useAuth();
@@ -16,7 +22,7 @@ function VerifyEmailBanner() {
       ? 'отправлять предложения можно после подтверждения'
       : 'до подтверждения профиль не виден работодателям';
   return (
-    <div className="section-card row" data-testid="verify-email-banner" style={{ margin: '1rem 0' }}>
+    <div className="section-card row" data-testid="verify-email-banner" style={{ marginBottom: '1.5rem' }}>
       <span>
         Подтвердите email {user.email}: ссылка отправлена при регистрации, {effect}.
       </span>
@@ -33,36 +39,62 @@ function VerifyEmailBanner() {
   );
 }
 
+function initials(name?: string) {
+  if (!name) return 'U';
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
 function Shell({ links }: { links: { to: string; label: string }[] }) {
   const { user, logout } = useAuth();
   return (
     <div className="app-shell">
-      <header className="topbar">
-        <div className="brand">LCT Resonance</div>
-        <nav className="nav">
+      <aside className="app-sidebar">
+        <div className="app-sidebar-brand">
+          FSP <span>Talent</span>
+        </div>
+        <nav className="nav" aria-label="Основная навигация">
           {links.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
               className={({ isActive }) => (isActive ? 'active' : undefined)}
-              end={link.to.split('/').length <= 2}
+              end={
+                link.to === '/admin/overview'
+                  ? false
+                  : link.to.split('/').length <= 2
+              }
             >
               {link.label}
             </NavLink>
           ))}
         </nav>
-        <div className="row">
+      </aside>
+      <div className="app-main">
+        <header className="topbar">
+          <div className="row" style={{ marginRight: 'auto' }} />
           <NotificationBell />
-          <span className="muted">{user?.displayName}</span>
-          <Button type="button" variant="secondary" onClick={() => void logout()}>
+          <div className="topbar-user">
+            <div className="topbar-avatar" aria-hidden>
+              {initials(user?.displayName)}
+            </div>
+            <div className="topbar-meta">
+              <strong>{user?.displayName}</strong>
+              <span>{user ? ROLE_LABEL[user.role] ?? user.role : ''}</span>
+            </div>
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={() => void logout()}>
             Выйти
           </Button>
-        </div>
-      </header>
-      <main className="page">
-        <VerifyEmailBanner />
-        <Outlet />
-      </main>
+        </header>
+        <main className="page">
+          <VerifyEmailBanner />
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }
@@ -77,7 +109,7 @@ export function CandidateLayout() {
         { to: '/candidate/offers', label: 'Предложения' },
         { to: '/candidate/testing', label: 'Тест' },
         { to: '/candidate/vacancies', label: 'Вакансии' },
-        { to: '/candidate/notifications', label: 'Увед.' },
+        { to: '/candidate/notifications', label: 'Уведомления' },
       ]}
     />
   );
@@ -93,7 +125,7 @@ export function EmployerLayout() {
         { to: '/employer/shortlist', label: 'Shortlist' },
         { to: '/employer/compare', label: 'Сравнение' },
         { to: '/employer/offers', label: 'Офферы' },
-        { to: '/employer/notifications', label: 'Увед.' },
+        { to: '/employer/notifications', label: 'Уведомления' },
       ]}
     />
   );
@@ -103,10 +135,12 @@ export function AdminLayout() {
   return (
     <Shell
       links={[
-        { to: '/admin', label: 'Overview' },
+        { to: '/admin/overview', label: 'Обзор' },
         { to: '/admin/users', label: 'Пользователи' },
+        { to: '/admin/assessments', label: 'Тестирование' },
+        { to: '/admin/categories', label: 'Категории' },
+        { to: '/admin/offers', label: 'Приглашения' },
         { to: '/admin/vacancies', label: 'Вакансии' },
-        { to: '/admin/offers', label: 'Офферы' },
       ]}
     />
   );
