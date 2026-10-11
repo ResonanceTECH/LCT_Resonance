@@ -75,7 +75,7 @@ class TestAttempt(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    items: Mapped[list[TestAttemptItem]] = relationship(
+    items: Mapped[list["TestAttemptItem"]] = relationship(
         back_populates="attempt",
         cascade="all, delete-orphan",
         order_by="TestAttemptItem.position",

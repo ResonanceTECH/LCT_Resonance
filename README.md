@@ -42,6 +42,9 @@ Browser (React)  →  /api (Vite proxy или nginx)  →  Backend  →  Postgre
 
 ## 2. Быстрый старт
 
+Пошаговая инструкция для новых участников команды, настройка почты и частые проблемы —
+в [`SETUP.md`](./SETUP.md).
+
 ### 2.1. Весь стенд в Docker (рекомендуется для демо)
 
 Нужны Docker/OrbStack, `POSTGRES_PASSWORD` в окружении или корневом `.env`, `backend/.env` из `backend/.env.example` (минимум `JWT_SECRET`).
@@ -164,7 +167,7 @@ Access token живёт 8 часов (у фронта нет refresh), пере�
 | Уведомления         | `GET /notifications`, `POST /notifications/{id}/read`, `POST /notifications/read-all`                                                               |
 | Дашборды            | `GET /dashboard/candidate`, `/dashboard/employer`, `/dashboard/employer/analytics`                                                                  |
 | Admin               | `GET /admin/overview`, `/admin/users`, `POST /admin/users/{id}/status`, `GET /admin/offers`, `/admin/vacancies`                                     |
-| Публично            | `GET /public/passports/{candidateId}` (только с согласием на публикацию)                                                                            |
+| Career Passport     | `GET /candidates/me/passport` (своя ссылка `/p/<имя>-<токен>` и почему она скрыта), `GET /public/passports/{slug}` без auth, только с согласием на публикацию; ищется по токену, внутренний id в ссылке не участвует |
 
 Полные схемы — Swagger. Изменение контракта: менять `frontend/src/entities/types.ts` и backend schemas вместе — контрактный тест ловит рассинхрон.
 

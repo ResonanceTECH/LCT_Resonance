@@ -4,29 +4,34 @@ import { describe, expect, it } from 'vitest';
 import { CareerPassportPage, QrCode } from '@/pages/public/CareerPassportPage';
 import { renderWithProviders } from '@/test/test-utils';
 
+function renderPassport(route: string) {
+  renderWithProviders(
+    <Routes>
+      <Route path="/p/:slug" element={<CareerPassportPage />} />
+    </Routes>,
+    { route },
+  );
+}
+
 describe('CareerPassportPage', () => {
   it('loads public passport without auth and shows QR + radar', async () => {
-    renderWithProviders(
-      <Routes>
-        <Route path="/p/:slug" element={<CareerPassportPage />} />
-      </Routes>,
-      { route: '/p/cand-1' },
-    );
+    renderPassport('/p/passport-cand-1');
 
     expect((await screen.findAllByText('Анна Ковалёва')).length).toBeGreaterThan(0);
     expect(screen.getByTestId('passport-qr')).toBeInTheDocument();
-    expect(screen.getByTestId('passport-qr').getAttribute('data-url')).toMatch(/\/p\/cand-1/);
+    expect(screen.getByTestId('passport-qr').getAttribute('data-url')).toMatch(/\/p\/passport-cand-1$/);
     expect(screen.getByTestId('skill-radar')).toBeInTheDocument();
     expect(screen.getByText(/Публичный паспорт кандидата/)).toBeInTheDocument();
   });
 
+  it('opens by the token even when the name part is outdated', async () => {
+    renderPassport('/p/old-name-cand-1');
+
+    expect((await screen.findAllByText('Анна Ковалёва')).length).toBeGreaterThan(0);
+  });
+
   it('shows error for unknown slug', async () => {
-    renderWithProviders(
-      <Routes>
-        <Route path="/p/:slug" element={<CareerPassportPage />} />
-      </Routes>,
-      { route: '/p/unknown-slug' },
-    );
+    renderPassport('/p/unknown-slug');
 
     await waitFor(() => {
       expect(screen.getAllByText(/Паспорт не найден/).length).toBeGreaterThan(0);
@@ -35,10 +40,13 @@ describe('CareerPassportPage', () => {
 });
 
 describe('QrCode', () => {
-  it('encodes URL into accessible svg', () => {
-    render(<QrCode value="http://localhost:5173/p/cand-1" />);
+  it('renders a real QR code of the URL as accessible svg', () => {
+    render(<QrCode value="http://localhost:5173/p/anna-kovaleva-k7m2q9xw" />);
     const qr = screen.getByTestId('passport-qr');
-    expect(qr).toHaveAttribute('data-url', 'http://localhost:5173/p/cand-1');
-    expect(qr.getAttribute('aria-label')).toMatch(/cand-1/);
+    expect(qr.tagName.toLowerCase()).toBe('svg');
+    expect(qr).toHaveAttribute('data-url', 'http://localhost:5173/p/anna-kovaleva-k7m2q9xw');
+    expect(qr.getAttribute('aria-label')).toMatch(/anna-kovaleva-k7m2q9xw/);
+    // qrcode.react draws the modules as a path, not the old decorative grid of rects.
+    expect(qr.querySelector('path')).not.toBeNull();
   });
 });

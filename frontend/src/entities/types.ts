@@ -220,6 +220,24 @@ export type Consent = {
   withdrawnAt?: string | null;
 };
 
+/** Why strangers cannot open the passport yet; null when it is published. */
+export type PassportUnpublishedReason = 'EMAIL_NOT_VERIFIED' | 'CONSENT_REQUIRED';
+
+/** The candidate's own Career Passport link: /p/<name>-<token>. */
+export type CandidatePassport = {
+  slug: string;
+  url: string;
+  published: boolean;
+  reason?: PassportUnpublishedReason | null;
+};
+
+export type PublicPassport = {
+  profile: CandidateProfile;
+  achievements: FspAchievement[];
+  radar: SkillRadar;
+  publicUrl: string;
+};
+
 export type NotificationType =
   | 'offer_new'
   | 'offer_accepted'

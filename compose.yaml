@@ -18,10 +18,12 @@ services:
       retries: 10
 
   # Catches verification emails in the demo; set SMTP_* to a real server for the jury.
+  # 1025 is published for a backend run outside Docker: SMTP_HOST=localhost, SMTP_PORT=1025.
   mailpit:
     image: axllent/mailpit:latest
     ports:
       - "8025:8025"
+      - "1025:1025"
 
   backend:
     build:
@@ -40,6 +42,8 @@ services:
       SMTP_PORT: ${SMTP_PORT:-1025}
       SMTP_USERNAME: ${SMTP_USERNAME:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-no-reply@resonance.local}
+      SMTP_USE_SSL: ${SMTP_USE_SSL:-false}
       SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
       SEED_ON_START: ${SEED_ON_START:-true}
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}

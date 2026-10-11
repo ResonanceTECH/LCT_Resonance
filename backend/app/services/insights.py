@@ -1,4 +1,4 @@
-"""Skill radar, candidate comparison and the public Career Passport (P2).
+"""Skill radar and candidate comparison (P2); the public passport lives in `passport`.
 
 The radar is an explainable estimate, not a per-skill exam: it starts from the grade
 (confirmed by a test, otherwise the declared one minus a penalty), adds the test result,
@@ -13,21 +13,16 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.core.errors import AppError
 from app.models.candidate import CandidateProfile
-from app.models.enums import ConsentType
 from app.models.user import User
 from app.schemas.candidate import (
     CandidateCompareResponse,
-    PublicPassport,
     SkillMatrixRow,
     SkillRadar,
     SkillRadarAxis,
 )
-from app.services import consents, profiles
-from app.services.candidate import get_visible_profile
-from app.services.fsp import list_achievements
+from app.services import profiles
 from app.services.matching import MATCH_PROFILE_OPTIONS
 from app.services.skills import normalize_skill_name
 
@@ -106,23 +101,4 @@ async def compare(db: AsyncSession, raw_ids: str) -> CandidateCompareResponse:
         candidates=await profiles.build_outs(db, candidates),
         skill_matrix=matrix,
         radars=list(radars.values()),
-    )
-
-
-async def passport(db: AsyncSession, slug: str) -> PublicPassport:
-    """Public page without auth: only with the candidate's consent to publication."""
-    try:
-        candidate_id = UUID(slug)
-    except ValueError as exc:
-        raise AppError("PASSPORT_NOT_FOUND", "Паспорт не найден", 404) from exc
-    if not await consents.has_consent(db, candidate_id, ConsentType.profile_publication):
-        raise AppError("PASSPORT_NOT_FOUND", "Паспорт не найден", 404)
-    await get_visible_profile(db, candidate_id)
-    profile = (await _load_visible(db, [candidate_id]))[0]
-    facts = (await profiles.load_facts(db, [candidate_id]))[candidate_id]
-    return PublicPassport(
-        profile=profiles.to_out(profile, facts),
-        achievements=await list_achievements(db, candidate_id),
-        radar=skill_radar(profile),
-        public_url=f"{get_settings().public_app_url.rstrip('/')}/p/{candidate_id}",
     )

@@ -70,7 +70,11 @@ async def test_employer_screens_have_data(client: AsyncClient):
 
 async def test_public_passport_needs_no_login(client: AsyncClient):
     candidate = await login(client, "candidate@demo.ru", DEMO_PASSWORD)
-    passport = await client.get(f"{API}/public/passports/{candidate.id}")
+    link = (await client.get(f"{API}/candidates/me/passport", headers=candidate.headers)).json()
+    assert link["published"] is True
+    assert link["slug"].startswith("anna-kovaleva-")
+    passport = await client.get(f"{API}/public/passports/{link['slug']}")
     assert passport.status_code == 200
     assert passport.json()["profile"]["fullName"] == "Анна Ковалёва"
+    assert passport.json()["publicUrl"] == link["url"]
     assert "phone" not in passport.json()["profile"]

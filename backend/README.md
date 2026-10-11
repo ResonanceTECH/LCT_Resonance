@@ -80,7 +80,7 @@ docker compose up -d --build
 | `JWT_ACCESS_TTL_MIN` / `JWT_REFRESH_TTL_DAYS` | 480 (у фронта нет refresh) / 7 |
 | `CORS_ORIGINS` | CSV origins; не нужен, если фронт идёт через прокси `/api` |
 | `PUBLIC_API_URL` / `PUBLIC_APP_URL` | база ссылки подтверждения email / ссылок Career Passport |
-| `SMTP_*` | отправка писем; без `SMTP_HOST` вне dev регистрация отвечает 503 |
+| `SMTP_*` | отправка писем; без `SMTP_HOST` в dev письмо не уходит, ссылка подтверждения пишется в лог (`email_not_sent`), вне dev регистрация отвечает 503. Настройка почты — [`SETUP.md`](../SETUP.md#почта) |
 | `FSP_PROVIDER` | `mock` \| `real` |
 | `MATCHER_PROVIDER` / `ML_MATCHER_URL` / `ML_TIMEOUT_SEC` | `baseline` \| `ml`; при ошибке ML — fallback на baseline |
 | `PASS_SCORE` / `GRADE_COOLDOWN_DAYS` / `TEST_ATTEMPT_TTL_MIN` | порог теста / смена категории / время на тест |
@@ -232,9 +232,10 @@ uv run alembic check                              # модели и миграц
 uv run alembic revision --autogenerate -m "…"     # только осознанно
 ```
 
-Миграции переносят данные (`d5f2a7c9e1b4` переводит профили, статусы и офферы в формат фронта),
-downgrade тоже рабочий. Если `a91c7e0b4f2d` падает с `Duplicate companies.owner_user_id` — база
-засижена старым скриптом: `alembic downgrade base && alembic upgrade head && python -m app.seed`.
+До первого релиза схема живёт в одной миграции `0001_initial_schema`; новые изменения — отдельными
+ревизиями поверх неё. База, созданная до схлопывания миграций (в `alembic_version` старая
+ревизия), не обновится: пересоздайте её (`docker compose down -v` или `DROP DATABASE` +
+`CREATE DATABASE`), затем `alembic upgrade head && python -m app.seed`.
 
 ---
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -32,6 +33,13 @@ if TYPE_CHECKING:
     from app.models.taxonomy import Grade, Skill, Specialization
     from app.models.user import User
 
+PASSPORT_TOKEN_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"
+PASSPORT_TOKEN_LENGTH = 8
+
+
+def new_passport_token() -> str:
+    return "".join(secrets.choice(PASSPORT_TOKEN_ALPHABET) for _ in range(PASSPORT_TOKEN_LENGTH))
+
 
 class CandidateProfile(Base):
     """Professional profile; `user_id` doubles as `candidateId` in the API."""
@@ -56,6 +64,7 @@ class CandidateProfile(Base):
             "salary_to IS NULL OR salary_from IS NULL OR salary_to >= salary_from",
             name="ck_candidate_salary_range",
         ),
+        Index("uq_candidate_profiles_passport_token", "passport_token", unique=True),
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -100,6 +109,9 @@ class CandidateProfile(Base):
     contacts_visibility: Mapped[str] = mapped_column(
         String(32), nullable=False, default=ContactsVisibility.after_accept.value
     )
+    passport_token: Mapped[str] = mapped_column(
+        String(16), nullable=False, default=new_passport_token
+    )
     last_grade_change_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # Score of the test that confirmed the current verified grade. Failed attempts do not
     # overwrite it, otherwise one failed try at a higher grade would sink the match score.
@@ -113,7 +125,9 @@ class CandidateProfile(Base):
     )
 
     user: Mapped[User] = relationship(back_populates="candidate_profile")
-    skills: Mapped[list[CandidateSkill]] = relationship(
+    # Quoted: the class is defined below, and IDE checkers do not all treat a bare forward
+    # reference as deferred even with `from __future__ import annotations`.
+    skills: Mapped[list["CandidateSkill"]] = relationship(
         back_populates="candidate", cascade="all, delete-orphan"
     )
     declared_specialization: Mapped[Specialization | None] = relationship(

@@ -88,6 +88,9 @@ async def test_responses_carry_every_required_frontend_field(
     _check(t, "Offer", (await get(cand, "/candidate/offers"))[0])
     notifications = await get(cand, "/notifications")
     _check(t, "AppNotification", notifications["items"][0])
+    passport = await get(cand, "/candidates/me/passport")
+    _check(t, "CandidatePassport", passport)
+    _check(t, "PublicPassport", await get(cand, f"/public/passports/{passport['slug']}"))
 
     vacancy = (await get(emp, "/employer/vacancies"))[0]
     _check(t, "Vacancy", vacancy)

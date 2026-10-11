@@ -282,6 +282,7 @@ UI читает `message`. Статусы, на которые завязаны 
 | GET    | `/admin/users`                       | пользователи                   |
 | POST   | `/admin/users/:id/status`            | `active` | `blocked`           |
 | GET    | `/admin/offers` | `/admin/vacancies` | модерация-списки               |
+| GET    | `/candidates/me/passport`            | своя ссылка на паспорт         |
 | GET    | `/public/passports/:slug`            | Career Passport (без auth)     |
 
 

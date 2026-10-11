@@ -36,7 +36,7 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    sessions: Mapped[list[AuthSession]] = relationship(back_populates="user")
+    sessions: Mapped[list["AuthSession"]] = relationship(back_populates="user")
     candidate_profile: Mapped[CandidateProfile | None] = relationship(
         "CandidateProfile", back_populates="user", uselist=False
     )

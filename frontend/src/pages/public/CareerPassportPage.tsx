@@ -1,56 +1,26 @@
 import { useQuery } from '@tanstack/react-query';
+import { QRCodeSVG } from 'qrcode.react';
 import { useParams } from 'react-router-dom';
 import { CandidateProfileView } from '@/entities/ui/CandidateProfile';
 import { SkillRadar } from '@/entities/ui/SkillRadar';
 import { FSPVerificationBadge } from '@/entities/ui/FSPVerificationBadge';
-import { apiClient } from '@/shared/api/client';
-import type { CandidateProfile, FspAchievement, SkillRadar as SkillRadarData } from '@/entities/types';
+import { publicApi } from '@/shared/api/endpoints';
 import { getErrorMessage } from '@/shared/api/errors';
 import { ErrorState, Loader } from '@/shared/ui';
 
-type PublicPassport = {
-  profile: CandidateProfile;
-  achievements: FspAchievement[];
-  radar: SkillRadarData;
-  publicUrl: string;
-};
-
-function publicPassportApi(slug: string) {
-  return apiClient<PublicPassport>(`/public/passports/${slug}`, { auth: false });
-}
-
-/** Simple QR as SVG (no external deps) — encodes public URL. */
+/** Scannable QR code of the passport link. */
 export function QrCode({ value, size = 140 }: { value: string; size?: number }) {
-  // Deterministic pseudo-QR pattern from URL hash — placeholder visual for MVP.
-  // Real QR generation stays Backend responsibility if needed later.
-  const cells = 21;
-  const cell = size / cells;
-  const hash = Array.from(value).reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) >>> 0, 7);
-  const bits: boolean[] = [];
-  let state = hash;
-  for (let i = 0; i < cells * cells; i += 1) {
-    state = (state * 1664525 + 1013904223) >>> 0;
-    bits.push(state % 3 === 0);
-  }
-
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
+    <QRCodeSVG
+      value={value}
+      size={size}
+      marginSize={2}
+      fgColor="#14201c"
       role="img"
       aria-label={`QR на публичный профиль: ${value}`}
       data-testid="passport-qr"
       data-url={value}
-    >
-      <rect width={size} height={size} fill="#fff" />
-      {bits.map((on, i) => {
-        if (!on) return null;
-        const x = (i % cells) * cell;
-        const y = Math.floor(i / cells) * cell;
-        return <rect key={i} x={x} y={y} width={cell} height={cell} fill="#14201c" />;
-      })}
-    </svg>
+    />
   );
 }
 
@@ -58,8 +28,9 @@ export function CareerPassportPage() {
   const { slug = '' } = useParams();
   const query = useQuery({
     queryKey: ['public-passport', slug],
-    queryFn: () => publicPassportApi(slug),
+    queryFn: () => publicApi.passport(slug),
     enabled: Boolean(slug),
+    retry: false,
   });
 
   if (query.isLoading) return <Loader label="Загружаем Career Passport..." />;
@@ -91,7 +62,7 @@ export function CareerPassportPage() {
           </div>
           <div className="section-card" style={{ textAlign: 'center' }}>
             <QrCode value={publicUrl} />
-            <p className="muted" style={{ marginBottom: 0, fontSize: '0.85rem' }}>
+            <p className="muted" style={{ marginBottom: 0, fontSize: '0.85rem', wordBreak: 'break-all' }}>
               {publicUrl}
             </p>
           </div>

@@ -8,6 +8,7 @@ from app.models.enums import UserRole
 from app.schemas.candidate import (
     CandidateContacts,
     CandidateMeOut,
+    CandidatePassport,
     CandidateProfileOut,
     CandidateUpdate,
     ProfileCompleteness,
@@ -19,7 +20,7 @@ from app.schemas.consent import ConsentOut, ConsentsUpdate
 from app.schemas.fsp import FspAchievementsResponse, FspLinkOut, FspLinkRequest
 from app.services import candidate as candidate_service
 from app.services import fsp as fsp_service
-from app.services import insights, offers, talent_pool
+from app.services import insights, offers, passport, talent_pool
 
 router = APIRouter(prefix="/candidates", tags=["candidates"])
 
@@ -57,6 +58,12 @@ async def put_consents(
 ) -> list[ConsentOut]:
     """Accept or withdraw: personal_data, profile_publication, fsp_sync (152-ФЗ)."""
     return await candidate_service.update_consents(db, user.id, payload)
+
+
+@router.get("/me/passport", response_model=CandidatePassport)
+async def get_passport(db: DbSession, user: CandidateUser) -> CandidatePassport:
+    """The public Career Passport link and, if strangers cannot open it yet, why."""
+    return await passport.my_passport(db, user)
 
 
 @router.get("/me/fsp/achievements", response_model=FspAchievementsResponse)

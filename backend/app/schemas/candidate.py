@@ -139,7 +139,6 @@ class SkillRadar(ApiModel):
 
 class SkillMatrixRow(ApiModel):
     skill: str
-    # Keyed by candidate id; null = the skill is not listed in that profile.
     values: dict[str, int | None]
 
 
@@ -154,6 +153,15 @@ class PublicPassport(ApiModel):
     achievements: list[FspAchievementOut]
     radar: SkillRadar
     public_url: str
+
+
+class CandidatePassport(ApiModel):
+    """The candidate's own passport link and whether strangers can open it."""
+
+    slug: str
+    url: str
+    published: bool
+    reason: str | None = None
 
 
 class ShortlistAdd(ApiModel):

@@ -41,6 +41,15 @@ function parseAuth(request: Request): AuthUser | null {
   return users.find((u) => u.id === userId) ?? null;
 }
 
+/** Backend links are /p/<name>-<token>; the mock uses the profile id as the token. */
+function passportSlug(profileId: string) {
+  return `passport-${profileId}`;
+}
+
+function passportUrl(profileId: string) {
+  return `${window.location.origin}/p/${passportSlug(profileId)}`;
+}
+
 function requireUser(request: Request) {
   const user = parseAuth(request);
   if (!user) {
@@ -270,20 +279,36 @@ export const handlers = [
     return HttpResponse.json(contactsByCandidate[candidateId] ?? {});
   }),
 
+  http.get(`${API}/candidates/me/passport`, async ({ request }) => {
+    await delay(150);
+    const auth = requireUser(request);
+    if ('error' in auth && auth.error) return auth.error;
+    const profile = profiles.find((p) => p.userId === auth.user!.id);
+    if (!profile) return HttpResponse.json({ message: 'Профиль не найден' }, { status: 404 });
+    return HttpResponse.json({
+      slug: passportSlug(profile.id),
+      url: passportUrl(profile.id),
+      published: true,
+      reason: null,
+    });
+  }),
+
   http.get(`${API}/public/passports/:slug`, async ({ params }) => {
     await delay(200);
+    // Like the backend, only the token (the last part) identifies the passport.
     const slug = String(params.slug);
-    const profile = profiles.find(
-      (p) => p.id === slug || p.fullName.toLowerCase().replace(/\s+/g, '-') === slug,
-    );
+    const profile = profiles.find((p) => slug === passportSlug(p.id) || slug.endsWith(`-${p.id}`));
     if (!profile) {
-      return HttpResponse.json({ message: 'Паспорт не найден' }, { status: 404 });
+      return HttpResponse.json(
+        { message: 'Паспорт не найден или скрыт кандидатом', code: 'PASSPORT_NOT_FOUND' },
+        { status: 404 },
+      );
     }
     return HttpResponse.json({
       profile,
       achievements: fspByCandidate[profile.id] ?? [],
       radar: computeSkillRadar(profile.id),
-      publicUrl: `http://localhost:5173/p/${profile.id}`,
+      publicUrl: passportUrl(profile.id),
     });
   }),
 

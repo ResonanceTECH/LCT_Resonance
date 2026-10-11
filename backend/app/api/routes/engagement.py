@@ -18,7 +18,7 @@ from app.schemas.engagement import (
 )
 from app.schemas.offer import OfferOut
 from app.schemas.vacancy import VacancyOut
-from app.services import admin, dashboards, insights, notifications, offers, vacancies
+from app.services import admin, dashboards, notifications, offers, passport, vacancies
 
 notifications_router = APIRouter(prefix="/notifications", tags=["notifications"])
 dashboard_router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -88,5 +88,6 @@ async def admin_vacancies(db: DbSession, user: AdminUser) -> list[VacancyOut]:
 
 @public_router.get("/passports/{slug}", response_model=PublicPassport)
 async def career_passport(slug: str, db: DbSession) -> PublicPassport:
-    """No auth. Shown only with the candidate's consent to profile publication."""
-    return await insights.passport(db, slug)
+    """No auth. `slug` is `<name>-<token>` from the candidate's passport link; only the
+    token is looked up. Shown only with the candidate's consent to profile publication."""
+    return await passport.public_passport(db, slug)

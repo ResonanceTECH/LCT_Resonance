@@ -68,7 +68,7 @@ class Vacancy(Base):
     company: Mapped[Company] = relationship(back_populates="vacancies")
     specialization: Mapped[Specialization] = relationship()
     grade: Mapped[Grade] = relationship()
-    skills: Mapped[list[VacancySkill]] = relationship(
+    skills: Mapped[list["VacancySkill"]] = relationship(
         back_populates="vacancy", cascade="all, delete-orphan"
     )
 

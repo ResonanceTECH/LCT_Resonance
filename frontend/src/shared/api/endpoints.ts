@@ -9,6 +9,7 @@ import type {
   CandidateContacts,
   CandidateDashboard,
   CandidateMatch,
+  CandidatePassport,
   CandidateProfile,
   Consent,
   ConsentType,
@@ -20,6 +21,7 @@ import type {
   LoginPayload,
   Offer,
   ProfileCompleteness,
+  PublicPassport,
   RegisterPayload,
   SkillRadar,
   TalentPoolFilters,
@@ -68,6 +70,12 @@ export const candidateApi = {
   consents: () => apiClient<Consent[]>('/candidates/me/consents'),
   updateConsents: (consents: { type: ConsentType; accepted: boolean }[]) =>
     apiClient<Consent[]>('/candidates/me/consents', { method: 'PUT', body: { consents } }),
+  passport: () => apiClient<CandidatePassport>('/candidates/me/passport'),
+};
+
+export const publicApi = {
+  passport: (slug: string) =>
+    apiClient<PublicPassport>(`/public/passports/${encodeURIComponent(slug)}`, { auth: false }),
 };
 
 export const vacancyApi = {
