@@ -27,16 +27,17 @@ describe('Admin API + UI', () => {
     await loginAdmin();
     renderWithProviders(
       <Routes>
-        <Route path="/admin" element={<AdminOverviewPage />} />
+        <Route path="/admin/overview" element={<AdminOverviewPage />} />
       </Routes>,
-      { route: '/admin' },
+      { route: '/admin/overview' },
     );
     expect(await screen.findByTestId('admin-overview')).toBeInTheDocument();
-    expect(screen.getByText('Кандидаты')).toBeInTheDocument();
-    expect(screen.getByText('Работодатели')).toBeInTheDocument();
+    expect(screen.getByText('Кандидатов')).toBeInTheDocument();
+    expect(screen.getByText('Работодателей')).toBeInTheDocument();
   });
 
   it('blocks user and prevents subsequent login', async () => {
+    const user = userEvent.setup();
     await loginAdmin();
     renderWithProviders(
       <Routes>
@@ -47,7 +48,11 @@ describe('Admin API + UI', () => {
 
     expect(await screen.findByTestId('admin-users')).toBeInTheDocument();
     const blockButtons = await screen.findAllByRole('button', { name: 'Заблокировать' });
-    await userEvent.click(blockButtons[0]);
+    await user.click(blockButtons[0]);
+
+    await user.type(screen.getByLabelText('Причина блокировки'), 'Нарушение правил');
+    const confirmButtons = screen.getAllByRole('button', { name: 'Заблокировать' });
+    await user.click(confirmButtons[confirmButtons.length - 1]);
 
     await waitFor(async () => {
       const users = await adminApi.users();

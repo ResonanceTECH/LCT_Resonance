@@ -27,8 +27,8 @@ export function AdminVacanciesPage() {
     <div>
       <div className="page-header">
         <div>
-          <h1>Все вакансии</h1>
-          <p>Обзор вакансий работодателей.</p>
+          <h1>Вакансии</h1>
+          <p>Обзор объявлений. Модерация и верификация компаний — вне MVP.</p>
         </div>
       </div>
       {items.length === 0 ? (
